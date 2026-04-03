@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sai Kumar — Job Search Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 20px; font-weight: 600; }
+    header span { font-size: 13px; opacity: 0.6; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+    }
+    .tab {
+      padding: 10px 24px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      background: #dde1ea;
+      color: #555;
+      border: none;
+      transition: all 0.15s;
+    }
+    .tab.active { background: white; color: #1a1a2e; }
+    .tab .count {
+      background: #e0e7ff;
+      color: #4f46e5;
+      border-radius: 12px;
+      padding: 1px 8px;
+      font-size: 12px;
+      margin-left: 6px;
+    }
+    .tab.active .count { background: #4f46e5; color: white; }
+
+    .panel {
+      background: white;
+      margin: 0 32px 32px;
+      border-radius: 0 8px 8px 8px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .toolbar input, .toolbar select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+    .toolbar input { width: 220px; }
+    .toolbar input:focus, .toolbar select:focus { border-color: #4f46e5; }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: #f8f9ff;
+      border: 1px solid #e0e7ff;
+      border-radius: 8px;
+      padding: 12px 20px;
+      flex: 1;
+      min-width: 120px;
+    }
+    .stat-card .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .stat-card .value { font-size: 24px; font-weight: 700; color: #4f46e5; }
+
+    .job-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .job-card {
+      border: 1px solid #e8eaf0;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: box-shadow 0.15s;
+    }
+    .job-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+    .score-badge {
+      min-width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: #e0e7ff;
+      color: #4f46e5;
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .score-badge.high { background: #d1fae5; color: #059669; }
+    .score-badge.mid  { background: #fef3c7; color: #d97706; }
+    .score-badge.low  { background: #f3f4f6; color: #6b7280; }
+
+    .job-info { flex: 1; min-width: 0; }
+    .job-title {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .job-meta {
+      font-size: 13px;
+      color: #666;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .job-meta span::before { content: "• "; }
+    .job-meta span:first-child::before { content: ""; }
+
+    .job-actions { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+
+    .btn {
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary  { background: #4f46e5; color: white; }
+    .btn-success  { background: #059669; color: white; }
+    .btn-danger   { background: #dc2626; color: white; }
+    .btn-referral { background: #7c3aed; color: white; }
+    .btn-disabled {
+      background: #e5e7eb;
+      color: #9ca3af;
+      cursor: not-allowed;
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+    }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    .page-btn {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .page-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .empty   { text-align: center; color: #999; padding: 48px 0; font-size: 15px; }
+    .loading { text-align: center; color: #999; padding: 48px 0; }
+
+    /* Tooltip for disabled buttons */
+    .tip-wrap { position: relative; display: inline-block; }
+    .tip-wrap .tooltip {
+      display: none;
+      position: absolute;
+      bottom: 110%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a2e;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .tip-wrap:hover .tooltip { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Sai Kumar — Job Search Tracker</h1>
+  <span id="last-updated"></span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('to-apply')">
+    To Apply <span class="count" id="count-to-apply">0</span>
+  </button>
+  <button class="tab" onclick="switchTab('filtered')">
+    Filtered Out <span class="count" id="count-filtered">0</span>
+  </button>
+</div>
+
+<div class="panel">
+  <div class="stats">
+    <div class="stat-card"><div class="label">To Apply</div><div class="value" id="stat-new">—</div></div>
+    <div class="stat-card"><div class="label">Filtered Out</div><div class="value" id="stat-filtered">—</div></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search-input" placeholder="Search title or company..." oninput="onSearch()" />
+    <select id="company-filter" onchange="onFilter()">
+      <option value="">All Companies</option>
+    </select>
+  </div>
+
+  <div class="job-list" id="job-list">
+    <div class="loading">Loading jobs...</div>
+  </div>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+  const SHEET_ID = "17yq77PnT9igANtm_PvOYcKreRp4od3OScs7lDc4VR1E";
+  const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+  const PAGE_SIZE = 10;
+  const LOCKED_MSG = "Only Sai Kumar has access to it.";
+
+  let allJobs    = [];
+  let activeTab  = "to-apply";
+  let currentPage = 1;
+
+  // ── CSV Parser ────────────────────────────────────────────────────────────
+
+  function parseCSV(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    const headers = parseCSVRow(lines[0]);
+    return lines.slice(1).map(line => {
+      const vals = parseCSVRow(line);
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = vals[i] || "");
+      return obj;
+    });
+  }
+
+  function parseCSVRow(line) {
+    const result = [];
+    let cur = "", inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i+1] === '"') { cur += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        result.push(cur); cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    result.push(cur);
+    return result;
+  }
+
+  // ── Data ──────────────────────────────────────────────────────────────────
+
+  async function fetchJobs() {
+    try {
+      const res  = await fetch(CSV_URL);
+      const text = await res.text();
+      allJobs = parseCSV(text);
+      updateCounts();
+      updateStats();
+      populateCompanyFilter();
+      renderList();
+      document.getElementById("last-updated").textContent =
+        "Updated " + new Date().toLocaleTimeString();
+    } catch (e) {
+      document.getElementById("job-list").innerHTML =
+        `<div class="empty">Failed to load jobs. Please try again later.</div>`;
+    }
+  }
+
+  // ── Filtering ─────────────────────────────────────────────────────────────
+
+  function getTabJobs() {
+    const search  = document.getElementById("search-input").value.toLowerCase();
+    const company = document.getElementById("company-filter").value;
+
+    return allJobs.filter(j => {
+      if (activeTab === "to-apply" && j.Status !== "New")          return false;
+      if (activeTab === "filtered" && j.Status !== "Filtered Out") return false;
+      if (company && j.Company !== company)                        return false;
+      if (search && !`${j.Title} ${j.Company}`.toLowerCase().includes(search)) return false;
+      return true;
+    }).sort((a, b) => (Number(b.Priority) || 0) - (Number(a.Priority) || 0));
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  function renderList() {
+    const jobs  = getTabJobs();
+    const total = jobs.length;
+    const pages = Math.ceil(total / PAGE_SIZE);
+    if (currentPage > pages) currentPage = 1;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const slice = jobs.slice(start, start + PAGE_SIZE);
+
+    const list = document.getElementById("job-list");
+    list.innerHTML = slice.length === 0
+      ? `<div class="empty">No jobs found.</div>`
+      : slice.map(renderCard).join("");
+
+    renderPagination(pages);
+  }
+
+  function lockedBtn(label) {
+    return `<div class="tip-wrap">
+      <button class="btn-disabled" onclick="alert('${LOCKED_MSG}')">${label}</button>
+      <div class="tooltip">${LOCKED_MSG}</div>
+    </div>`;
+  }
+
+  function renderCard(job) {
+    const score      = Number(job.Priority) || 0;
+    const scoreClass = score >= 30 ? "high" : score >= 15 ? "mid" : "low";
+    const date       = job["Date Found"] || job["Date Posted"] || "";
+    const reason     = job.Notes ? job.Notes.replace("Auto-filtered: ", "") : "";
+
+    const actions = activeTab === "to-apply"
+      ? `<a href="${esc(job.URL)}" target="_blank" class="btn btn-primary">Open</a>
+         ${lockedBtn("Ask Referral")}
+         ${lockedBtn("Applied")}
+         ${lockedBtn("Not Interested")}`
+      : `<a href="${esc(job.URL)}" target="_blank" class="btn btn-primary">Open</a>
+         ${lockedBtn("Applied")}`;
+
+    return `
+      <div class="job-card">
+        <div class="score-badge ${scoreClass}">${score || "—"}</div>
+        <div class="job-info">
+          <div class="job-title">${esc(job.Title)}</div>
+          <div class="job-meta">
+            <span>${esc(job.Company)}</span>
+            <span>${esc(job.Location)}</span>
+            ${job["Work Mode"] ? `<span>${esc(job["Work Mode"])}</span>` : ""}
+            ${date ? `<span>${date}</span>` : ""}
+            ${activeTab === "filtered" && reason ? `<span style="color:#dc2626">${esc(reason)}</span>` : ""}
+          </div>
+        </div>
+        <div class="job-actions">${actions}</div>
+      </div>`;
+  }
+
+  function renderPagination(pages) {
+    const pg = document.getElementById("pagination");
+    if (pages <= 1) { pg.innerHTML = ""; return; }
+
+    let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?"disabled":""}>‹</button>`;
+    for (let i = 1; i <= pages; i++) {
+      if (pages > 7 && Math.abs(i - currentPage) > 2 && i !== 1 && i !== pages) {
+        if (i === 2 || i === pages - 1) html += `<span style="padding:0 4px">…</span>`;
+        continue;
+      }
+      html += `<button class="page-btn ${i===currentPage?"active":""}" onclick="goPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?"disabled":""}>›</button>`;
+    pg.innerHTML = html;
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+
+  function switchTab(tab) {
+    activeTab   = tab;
+    currentPage = 1;
+    document.querySelectorAll(".tab").forEach((t, i) => {
+      t.classList.toggle("active", ["to-apply","filtered"][i] === tab);
+    });
+    renderList();
+  }
+
+  function goPage(p)  { currentPage = p; renderList(); window.scrollTo(0,0); }
+  function onSearch() { currentPage = 1; renderList(); }
+  function onFilter() { currentPage = 1; renderList(); }
+
+  // ── Counts & Stats ────────────────────────────────────────────────────────
+
+  function updateCounts() {
+    document.getElementById("count-to-apply").textContent = allJobs.filter(j => j.Status === "New").length;
+    document.getElementById("count-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
+  }
+
+  function updateStats() {
+    document.getElementById("stat-new").textContent      = allJobs.filter(j => j.Status === "New").length;
+    document.getElementById("stat-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
+  }
+
+  function populateCompanyFilter() {
+    const sel       = document.getElementById("company-filter");
+    const companies = [...new Set(allJobs.map(j => j.Company).filter(Boolean))].sort();
+    sel.innerHTML   = `<option value="">All Companies</option>` +
+      companies.map(c => `<option value="${c}">${esc(c)}</option>`).join("");
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function esc(str) {
+    return String(str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  fetchJobs();
+</script>
+</body>
+</html>

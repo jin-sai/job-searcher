@@ -1,0 +1,8 @@
+linkedin-jobs-scraper
+playwright
+gspread
+google-auth
+fastapi
+uvicorn[standard]
+aiofiles
+pydantic

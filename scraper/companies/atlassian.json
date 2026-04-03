@@ -1,0 +1,32 @@
+{
+  "name": "Atlassian",
+  "url": "https://www.atlassian.com/company/careers/all-jobs?team=Engineering&location=India",
+  "title_selector": "a[data-testid='job-card-title']",
+  "location_selector": "span[data-testid='job-card-location']",
+  "link_selector": "a[data-testid='job-card-title']",
+  "link_attr": "href",
+  "link_prefix": "https://www.atlassian.com",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "name": "JPMC",
+  "url": "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs?lastSelectedFacet=POSTING_DATES&location=India&locationId=300000000289360&locationLevel=country&mode=location&selectedCategoriesFacet=300000086152753&selectedPostingDatesFacet=7",
+  "card_selector": ".job-tile",
+  "title_selector": "span.job-tile__title",
+  "location_selector": "span[data-bind='html: primaryLocation']",
+  "link_selector": "a.job-grid-item__link[href*='/job/']",
+  "link_attr": "href",
+  "link_prefix": "",
+  "job_id_url_pattern": "/job/(\\d+)/",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "lead software engineer",
+    "principal engineer"
+  ],
+  "exclude_keywords": [
+    "mainframe",
+    "databricks"
+  ],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

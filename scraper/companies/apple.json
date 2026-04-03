@@ -1,0 +1,37 @@
+{
+  "name": "Apple",
+  "url": "https://jobs.apple.com/en-in/search?location=india-INDC&team=apps-and-frameworks-SFTWR-AF+cloud-and-infrastructure-SFTWR-CLD+core-operating-systems-SFTWR-COS+engineering-project-management-SFTWR-EPM+information-systems-and-technology-SFTWR-ISTECH+machine-learning-SFTWR-MCHLN+software-quality-automation-tools-SFTWR-SQAT+wireless-software-SFTWR-WSFT",
+  "card_selector": ".job-title-link",
+  "title_selector": "h3 a",
+  "location_selector": "",
+  "location_js": "el => el.closest('.job-list-item')?.querySelector('[id*=store-name]')?.innerText?.trim() || ''",
+  "date_posted_js": "el => el.querySelector('.job-posted-date')?.innerText?.trim() || ''",
+  "link_selector": "h3 a",
+  "link_attr": "href",
+  "link_prefix": "https://jobs.apple.com",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "systems engineer",
+    "tools and automation"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

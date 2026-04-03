@@ -1,0 +1,33 @@
+{
+  "name": "Salesforce",
+  "url": "https://careers.salesforce.com/en/jobs/?search=mts&country=India&location=Bangalore&location=Hyderabad&pagesize=20&sort=newest#results",
+  "title_selector": "h3.card-title",
+  "location_selector": ".job-meta",
+  "link_selector": "a.js-view-job",
+  "link_attr": "href",
+  "link_prefix": "https://careers.salesforce.com",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "mts",
+    "smts",
+    "platform engineer",
+    "infrastructure engineer",
+    "api engineer"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Adobe",
+  "url": "https://adobe.wd5.myworkdayjobs.com/en-US/external_experienced?q=computer+scientist&sortBy=Date",
+  "title_selector": "a[data-automation-id='jobTitle']",
+  "location_selector": "[data-automation-id='locations']",
+  "link_selector": "a[data-automation-id='jobTitle']",
+  "link_attr": "href",
+  "link_prefix": "https://adobe.wd5.myworkdayjobs.com",
+  "role_keywords": [
+    "computer scientist"
+  ],
+  "exclude_keywords": [
+    "computer scientist 2",
+    "computer scientist-ii",
+    "computer scientist ii",
+    "computer scientist - 2",
+    "sr. computer scientist",
+    "senior computer scientist"
+  ],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ],
+  "date_posted_selector": "[data-automation-id='postedOn'] dd"
+}

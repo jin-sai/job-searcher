@@ -1,0 +1,36 @@
+{
+  "name": "Microsoft",
+  "url": "https://apply.careers.microsoft.com/careers?hl=en&start=0&location=India&pid=1970393556640685&sort_by=date&filter_include_remote=1&filter_profession=software+engineering&filter_seniority=Mid-Level",
+  "title_selector": ".title-1aNJK",
+  "location_selector": ".fieldValue-3kEar",
+  "link_selector": "a.card-F1ebU",
+  "link_attr": "href",
+  "link_prefix": "https://apply.careers.microsoft.com",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "principal engineer",
+    "staff engineer"
+  ],
+  "exclude_keywords": [
+    "senior software engineer"
+  ],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

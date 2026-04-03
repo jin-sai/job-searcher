@@ -1,0 +1,38 @@
+{
+  "name": "Nutanix",
+  "url": "https://careers.nutanix.com/en/jobs/?search=&country=India&location=Bangalore&team=Engineering&team=Information+Technology&pagesize=20&sort=newest#results",
+  "title_selector": "h2.card-title",
+  "location_selector": ".job-meta-location",
+  "link_selector": "a.js-view-job",
+  "link_attr": "href",
+  "link_prefix": "https://careers.nutanix.com",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "mts",
+    "member of technical staff",
+    "platform engineer",
+    "infrastructure engineer",
+    "systems engineer",
+    "system software",
+    "linux kernel",
+    "site reliability",
+    "sre"
+  ],
+  "exclude_keywords": [
+  ],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

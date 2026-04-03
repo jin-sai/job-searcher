@@ -1,0 +1,39 @@
+{
+  "name": "NVIDIA",
+  "url": "https://nvidia.eightfold.ai/careers?start=0&location=india&pid=893394115595&sort_by=date&filter_include_remote=1&filter_job_category=engineering",
+  "title_selector": ".title-1aNJK",
+  "location_selector": ".fieldValue-3kEar",
+  "location_field_index": 1,
+  "link_selector": "a.card-F1ebU",
+  "link_attr": "href",
+  "link_prefix": "https://nvidia.eightfold.ai",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "system software",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack"
+  ],
+  "exclude_keywords": [
+    "asic",
+    "dft",
+    "verification",
+    "vlsi",
+    "physical design",
+    "analog"
+  ],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "LinkedIn",
+  "url": "https://careers.linkedin.com/jobs#q=software%20engineer&location=India",
+  "title_selector": ".result-card__title",
+  "location_selector": ".job-result-card__location",
+  "link_selector": "a.result-card__full-card-link",
+  "link_attr": "href",
+  "link_prefix": "",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

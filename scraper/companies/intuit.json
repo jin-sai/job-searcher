@@ -1,0 +1,35 @@
+{
+  "name": "Intuit",
+  "url": "https://jobs.intuit.com/search-jobs/India/27595/2/1269750/22/79/0/2?ss=1&sortColumn=referencedate&sortDirection=desc",
+  "title_selector": "li h2",
+  "location_selector": "span.job-location",
+  "link_selector": "a.sr-item",
+  "link_attr": "href",
+  "link_prefix": "https://jobs.intuit.com",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer",
+    "principal engineer"
+  ],
+  "exclude_keywords": [
+  ],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

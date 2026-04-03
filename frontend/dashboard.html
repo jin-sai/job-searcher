@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Search Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 20px; font-weight: 600; }
+    header span { font-size: 13px; opacity: 0.6; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 20px 32px 0;
+    }
+    .tab {
+      padding: 10px 24px;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      background: #dde1ea;
+      color: #555;
+      border: none;
+      transition: all 0.15s;
+    }
+    .tab.active { background: white; color: #1a1a2e; }
+    .tab .count {
+      background: #e0e7ff;
+      color: #4f46e5;
+      border-radius: 12px;
+      padding: 1px 8px;
+      font-size: 12px;
+      margin-left: 6px;
+    }
+    .tab.active .count { background: #4f46e5; color: white; }
+
+    .panel {
+      background: white;
+      margin: 0 32px 32px;
+      border-radius: 0 8px 8px 8px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .toolbar input, .toolbar select {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+    .toolbar input { width: 220px; }
+    .toolbar input:focus, .toolbar select:focus { border-color: #4f46e5; }
+
+    /* Stats bar */
+    .stats {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: #f8f9ff;
+      border: 1px solid #e0e7ff;
+      border-radius: 8px;
+      padding: 12px 20px;
+      flex: 1;
+      min-width: 120px;
+    }
+    .stat-card .label { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .stat-card .value { font-size: 24px; font-weight: 700; color: #4f46e5; }
+
+    /* Job cards */
+    .job-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .job-card {
+      border: 1px solid #e8eaf0;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: box-shadow 0.15s;
+    }
+    .job-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+    .score-badge {
+      min-width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: #e0e7ff;
+      color: #4f46e5;
+      font-weight: 700;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .score-badge.high { background: #d1fae5; color: #059669; }
+    .score-badge.mid  { background: #fef3c7; color: #d97706; }
+    .score-badge.low  { background: #f3f4f6; color: #6b7280; }
+
+    .job-info { flex: 1; min-width: 0; }
+    .job-title {
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .job-meta {
+      font-size: 13px;
+      color: #666;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .job-meta span::before { content: "• "; }
+    .job-meta span:first-child::before { content: ""; }
+
+    .job-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn {
+      padding: 7px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #4f46e5; color: white; }
+    .btn-success { background: #059669; color: white; }
+    .btn-outline {
+      background: white;
+      color: #4f46e5;
+      border: 1px solid #4f46e5;
+    }
+    .btn-danger    { background: #dc2626; color: white; }
+    .btn-referral  { background: #7c3aed; color: white; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Status badge */
+    .status-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-New      { background: #e0e7ff; color: #4f46e5; }
+    .status-Applied  { background: #d1fae5; color: #059669; }
+    .status-Filtered { background: #fee2e2; color: #dc2626; }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+    .page-btn {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .page-btn.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .empty { text-align: center; color: #999; padding: 48px 0; font-size: 15px; }
+    .loading { text-align: center; color: #999; padding: 48px 0; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1a1a2e;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white;
+      border-radius: 12px;
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+    }
+    .modal h2 { font-size: 18px; margin-bottom: 4px; }
+    .modal .subtitle { font-size: 13px; color: #888; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Job Search Dashboard</h1>
+  <span id="last-updated"></span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('to-apply')">
+    To Apply <span class="count" id="count-to-apply">0</span>
+  </button>
+  <button class="tab" onclick="switchTab('referral')">
+    Ask For Referral <span class="count" id="count-referral">0</span>
+  </button>
+  <button class="tab" onclick="switchTab('applied')">
+    Applied <span class="count" id="count-applied">0</span>
+  </button>
+  <button class="tab" onclick="switchTab('filtered')">
+    Filtered Out <span class="count" id="count-filtered">0</span>
+  </button>
+</div>
+
+<div class="panel">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card"><div class="label">Total Jobs</div><div class="value" id="stat-total">—</div></div>
+    <div class="stat-card"><div class="label">To Apply</div><div class="value" id="stat-new">—</div></div>
+    <div class="stat-card"><div class="label">Ask Referral</div><div class="value" id="stat-referral">—</div></div>
+    <div class="stat-card"><div class="label">Applied</div><div class="value" id="stat-applied">—</div></div>
+    <div class="stat-card"><div class="label">Filtered Out</div><div class="value" id="stat-filtered">—</div></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input type="text" id="search-input" placeholder="Search title or company..." oninput="onSearch()" />
+    <select id="company-filter" onchange="onFilter()">
+      <option value="">All Companies</option>
+    </select>
+    <button class="btn btn-outline" onclick="refreshData()">Refresh</button>
+    <button class="btn btn-danger" id="dismiss-all-btn" onclick="dismissAll()">Dismiss All</button>
+  </div>
+
+  <!-- Job list -->
+  <div class="job-list" id="job-list">
+    <div class="loading">Loading jobs...</div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- Apply Modal -->
+<div class="modal-overlay" id="apply-modal">
+  <div class="modal">
+    <h2 id="modal-title">Mark as Applied</h2>
+    <div class="subtitle" id="modal-company"></div>
+    <div class="form-group">
+      <label>Date Applied</label>
+      <input type="date" id="modal-date" />
+    </div>
+    <div class="form-group">
+      <label>Resume Version (Google Drive link) <span style="color:#aaa">— coming soon</span></label>
+      <input type="text" id="modal-resume" placeholder="https://drive.google.com/..." disabled />
+    </div>
+    <div class="form-group">
+      <label>Cover Letter (Google Drive link) <span style="color:#aaa">— coming soon</span></label>
+      <input type="text" id="modal-cover" placeholder="https://drive.google.com/..." disabled />
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success" onclick="confirmApply()">Confirm Applied</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API_BASE = "http://127.0.0.1:8001";
+  const API_KEY  = "local-dev-key";
+  const PAGE_SIZE = 10;
+
+  let allJobs    = [];
+  let activeTab  = "to-apply";
+  let currentPage = 1;
+  let pendingJobId = null;
+
+  const headers = { "x-api-key": API_KEY };
+
+  // ── Data ──────────────────────────────────────────────────────────────────
+
+  async function fetchJobs() {
+    const res  = await fetch(`${API_BASE}/jobs`, { headers });
+    allJobs    = await res.json();
+    allJobs.forEach(j => { j["Job ID"] = String(j["Job ID"]); });
+    updateCounts();
+    updateStats();
+    populateCompanyFilter();
+    renderList();
+    document.getElementById("last-updated").textContent =
+      "Updated " + new Date().toLocaleTimeString();
+  }
+
+  async function refreshData() {
+    await fetch(`${API_BASE}/cache/refresh`, { headers });
+    await fetchJobs();
+    showToast("Data refreshed");
+  }
+
+  // ── Filtering ─────────────────────────────────────────────────────────────
+
+  function getTabJobs() {
+    const search  = document.getElementById("search-input").value.toLowerCase();
+    const company = document.getElementById("company-filter").value;
+
+    return allJobs.filter(j => {
+      if (activeTab === "to-apply"  && j.Status !== "New")                    return false;
+      if (activeTab === "referral"  && j.Status !== "Referral Requested")     return false;
+      if (activeTab === "applied"   && j.Status !== "Applied")                return false;
+      if (activeTab === "filtered"  && j.Status !== "Filtered Out")           return false;
+      if (company && j.Company !== company)                                   return false;
+      if (search && !`${j.Title} ${j.Company}`.toLowerCase().includes(search)) return false;
+      return true;
+    }).sort((a, b) => (Number(b.Priority) || 0) - (Number(a.Priority) || 0));
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  function renderList() {
+    const jobs  = getTabJobs();
+    const total = jobs.length;
+    const pages = Math.ceil(total / PAGE_SIZE);
+    if (currentPage > pages) currentPage = 1;
+
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const slice = jobs.slice(start, start + PAGE_SIZE);
+
+    const list = document.getElementById("job-list");
+
+    if (slice.length === 0) {
+      list.innerHTML = `<div class="empty">No jobs found.</div>`;
+    } else {
+      list.innerHTML = slice.map(renderCard).join("");
+    }
+
+    renderPagination(pages);
+  }
+
+  function renderCard(job) {
+    const score     = Number(job.Priority) || 0;
+    const scoreClass = score >= 30 ? "high" : score >= 15 ? "mid" : "low";
+    const date      = job["Date Found"] || job["Date Posted"] || "";
+    const reason    = job.Notes ? `<span title="${job.Notes}">⚠ ${job.Notes.replace("Auto-filtered: ", "")}</span>` : "";
+
+    const actions = activeTab === "to-apply"
+      ? `<a href="${job.URL}" target="_blank" class="btn btn-primary">Open</a>
+         <button class="btn btn-referral" onclick="markReferral('${job["Job ID"]}')">Ask Referral</button>
+         <button class="btn btn-success" onclick="openApplyModal('${job["Job ID"]}', '${esc(job.Title)}', '${esc(job.Company)}')">Applied</button>
+         <button class="btn btn-danger" onclick="markNotInterested('${job["Job ID"]}')">Not Interested</button>`
+      : activeTab === "referral"
+      ? `<a href="${job.URL}" target="_blank" class="btn btn-primary">Open</a>
+         <button class="btn btn-success" onclick="openApplyModal('${job["Job ID"]}', '${esc(job.Title)}', '${esc(job.Company)}')">Applied</button>
+         <button class="btn btn-danger" onclick="markNotInterested('${job["Job ID"]}')">Not Interested</button>`
+      : activeTab === "filtered"
+      ? `<a href="${job.URL}" target="_blank" class="btn btn-outline">Open</a>
+         <button class="btn btn-success" onclick="openApplyModal('${job["Job ID"]}', '${esc(job.Title)}', '${esc(job.Company)}')">Applied</button>`
+      : `<a href="${job.URL}" target="_blank" class="btn btn-outline">Open</a>`;
+
+    return `
+      <div class="job-card">
+        <div class="score-badge ${scoreClass}">${score || "—"}</div>
+        <div class="job-info">
+          <div class="job-title">${esc(job.Title)}</div>
+          <div class="job-meta">
+            <span>${esc(job.Company)}</span>
+            <span>${esc(job.Location)}</span>
+            ${date ? `<span>${date}</span>` : ""}
+            ${activeTab === "filtered" ? `<span style="color:#dc2626">${reason}</span>` : ""}
+            ${activeTab === "applied" && job["Date Applied"] ? `<span>Applied: ${job["Date Applied"]}</span>` : ""}
+          </div>
+        </div>
+        <div class="job-actions">${actions}</div>
+      </div>`;
+  }
+
+  function renderPagination(pages) {
+    const pg = document.getElementById("pagination");
+    if (pages <= 1) { pg.innerHTML = ""; return; }
+
+    let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?"disabled":""}>‹</button>`;
+    for (let i = 1; i <= pages; i++) {
+      if (pages > 7 && Math.abs(i - currentPage) > 2 && i !== 1 && i !== pages) {
+        if (i === 2 || i === pages - 1) html += `<span style="padding:0 4px">…</span>`;
+        continue;
+      }
+      html += `<button class="page-btn ${i===currentPage?"active":""}" onclick="goPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?"disabled":""}>›</button>`;
+    pg.innerHTML = html;
+  }
+
+  // ── Tabs ──────────────────────────────────────────────────────────────────
+
+  function switchTab(tab) {
+    activeTab   = tab;
+    currentPage = 1;
+    document.querySelectorAll(".tab").forEach((t, i) => {
+      t.classList.toggle("active", ["to-apply","referral","applied","filtered"][i] === tab);
+    });
+    document.getElementById("dismiss-all-btn").style.display = tab === "to-apply" ? "" : "none";
+    renderList();
+  }
+
+  function goPage(p) {
+    currentPage = p;
+    renderList();
+    window.scrollTo(0, 0);
+  }
+
+  function onSearch()  { currentPage = 1; renderList(); }
+  function onFilter()  { currentPage = 1; renderList(); }
+
+  // ── Counts & Stats ────────────────────────────────────────────────────────
+
+  function updateCounts() {
+    document.getElementById("count-to-apply").textContent = allJobs.filter(j => j.Status === "New").length;
+    document.getElementById("count-referral").textContent = allJobs.filter(j => j.Status === "Referral Requested").length;
+    document.getElementById("count-applied").textContent  = allJobs.filter(j => j.Status === "Applied").length;
+    document.getElementById("count-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
+  }
+
+  function updateStats() {
+    document.getElementById("stat-total").textContent    = allJobs.length;
+    document.getElementById("stat-new").textContent      = allJobs.filter(j => j.Status === "New").length;
+    document.getElementById("stat-referral").textContent = allJobs.filter(j => j.Status === "Referral Requested").length;
+    document.getElementById("stat-applied").textContent  = allJobs.filter(j => j.Status === "Applied").length;
+    document.getElementById("stat-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
+  }
+
+  function populateCompanyFilter() {
+    const sel       = document.getElementById("company-filter");
+    const companies = [...new Set(allJobs.map(j => j.Company).filter(Boolean))].sort();
+    sel.innerHTML   = `<option value="">All Companies</option>` +
+      companies.map(c => `<option value="${c}">${c}</option>`).join("");
+  }
+
+  // ── Apply Modal ───────────────────────────────────────────────────────────
+
+  function openApplyModal(jobId, title, company) {
+    pendingJobId = jobId;
+    document.getElementById("modal-title").textContent   = title;
+    document.getElementById("modal-company").textContent = company;
+    document.getElementById("modal-date").value = new Date().toISOString().split("T")[0];
+    document.getElementById("apply-modal").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("apply-modal").classList.remove("open");
+    pendingJobId = null;
+  }
+
+  async function dismissAll() {
+    const jobs = allJobs.filter(j => j.Status === "New");
+    if (!jobs.length) return;
+    if (!confirm(`Mark all ${jobs.length} jobs in To Apply as Not Interested?`)) return;
+
+    const res = await fetch(`${API_BASE}/jobs/dismiss-all-new`, {
+      method: "POST",
+      headers,
+    });
+    if (res.ok) {
+      const { updated } = await res.json();
+      jobs.forEach(j => { j.Status = "Filtered Out"; j.Notes = "Manually filtered"; });
+      updateCounts();
+      updateStats();
+      renderList();
+      showToast(`${updated} jobs dismissed`);
+    } else {
+      showToast("Failed to dismiss jobs");
+    }
+  }
+
+  async function markReferral(jobId) {
+    const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "Referral Requested" }),
+    });
+    if (res.ok) {
+      const job = allJobs.find(j => String(j["Job ID"]) === String(jobId));
+      if (job) job.Status = "Referral Requested";
+      updateCounts();
+      updateStats();
+      renderList();
+      showToast("Moved to Ask For Referral");
+    } else {
+      showToast("Failed to update");
+    }
+  }
+
+  async function markNotInterested(jobId) {
+    const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "Filtered Out", notes: "Manually filtered" }),
+    });
+    if (res.ok) {
+      const job = allJobs.find(j => String(j["Job ID"]) === String(jobId));
+      if (job) { job.Status = "Filtered Out"; job.Notes = "Manually filtered"; }
+      updateCounts();
+      updateStats();
+      renderList();
+      showToast("Marked as Not Interested");
+    } else {
+      showToast("Failed to update");
+    }
+  }
+
+  async function confirmApply() {
+    if (!pendingJobId) return;
+    const date = document.getElementById("modal-date").value;
+
+    const res = await fetch(`${API_BASE}/jobs/${pendingJobId}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "Applied", date_applied: date }),
+    });
+
+    if (res.ok) {
+      const job = allJobs.find(j => String(j["Job ID"]) === String(pendingJobId));
+      if (job) { job.Status = "Applied"; job["Date Applied"] = date; }
+      closeModal();
+      updateCounts();
+      updateStats();
+      renderList();
+      showToast("Marked as Applied");
+    } else {
+      showToast("Failed to update");
+    }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function esc(str) {
+    return String(str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2500);
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  fetchJobs();
+</script>
+</body>
+</html>

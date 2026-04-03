@@ -1,0 +1,35 @@
+{
+  "name": "Google",
+  "url": "https://www.google.com/about/careers/applications/jobs/results?q=software+engineer&location=Bengaluru%2C%20India&location=Hyderabad%2C%20India&target_level=MID&employment_type=FULL_TIME&sort_by=date",
+  "card_selector": ".sMn82b",
+  "title_selector": "h3.QJPWVe",
+  "location_selector": ".r0wTof",
+  "link_selector": "a",
+  "link_attr": "href",
+  "link_prefix": "https://www.google.com/about/careers/applications/",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "site reliability",
+    "sre",
+    "platform engineer",
+    "infrastructure engineer"
+  ],
+  "exclude_keywords": [
+    "ux"
+  ],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

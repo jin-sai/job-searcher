@@ -1,0 +1,36 @@
+{
+  "name": "Meta",
+  "graphql_url": "https://www.metacareers.com/jobsearch?sort_by_new=true&offices[0]=Bangalore%2C%20India&offices[1]=Hyderabad%2C%20India&roles[0]=Full%20time%20employment",
+  "graphql_endpoint": "https://www.metacareers.com/graphql",
+  "graphql_jobs_key": [
+    "data",
+    "job_search_with_featured_jobs",
+    "all_jobs"
+  ],
+  "job_url_prefix": "https://www.metacareers.com/jobs/",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "production engineer",
+    "site reliability",
+    "sre"
+  ],
+  "exclude_keywords": [
+  ],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}

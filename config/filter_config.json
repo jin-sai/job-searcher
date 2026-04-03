@@ -1,0 +1,49 @@
+{
+  "max_experience_years": 6,
+  "keyword_scores": {
+    "kafka": 10,
+    "spring boot": 10,
+    "java": 10,
+    "microservices": 10,
+    "kubernetes": 5,
+    "k8s": 5,
+    "distributed systems": 7,
+    "event-driven": 6,
+    "opensearch": 8,
+    "elasticsearch": 8,
+    "prometheus": 8,
+    "grafana": 8,
+    "helm": 5,
+    "docker": 4,
+    "python": 6,
+    "gcp": 5,
+    "ci/cd": 3,
+    "devops": 3,
+    "grpc": 3,
+    "rest": 2,
+    "api": 2,
+    "cloud": 2,
+    "backend": 2,
+    "back-end": 2,
+    "system design": 2,
+    "scalable": 1,
+    "agile": 1,
+    "tdd": 1
+  },
+  "priority_thresholds": {
+    "High": 25,
+    "Medium": 10
+  },
+  "exclude_title_keywords": [
+    "intern", "internship", "fresher", "junior",
+    "frontend", "front-end", "front end",
+    "ios", "android", "mobile",
+    "qa", "quality assurance",
+    "data scientist", "machine learning", "ml engineer",
+    "manager", "director", "designer", "analyst",
+    "product manager", "test engineer", "program manager",
+    "lead software engineer", "principal software engineer", "staff"
+  ],
+  "exclude_description_keywords": [],
+  "min_skill_matches": 1
+}

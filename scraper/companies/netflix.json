@@ -1,0 +1,29 @@
+{
+  "name": "Netflix",
+  "api_url": "https://explore.jobs.netflix.net/api/apply/v2/jobs/790314479309/jobs?domain=netflix.com&Teams=Engineering&Teams=Engineering%20Operations&location=India&sort_by=recent&num_jobs=50",
+  "role_keywords": [
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "software engineer",
+    "software developer",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "mumbai",
+    "india",
+    "remote"
+  ]
+}
