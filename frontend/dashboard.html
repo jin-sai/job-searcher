@@ -377,7 +377,7 @@
       if (company && j.Company !== company)                                   return false;
       if (search && !`${j.Title} ${j.Company}`.toLowerCase().includes(search)) return false;
       return true;
-    }).sort((a, b) => (Number(b.Priority) || 0) - (Number(a.Priority) || 0));
+    }).sort((a, b) => activeTab === "filtered" ? -1 : (Number(b.Priority) || 0) - (Number(a.Priority) || 0));
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
