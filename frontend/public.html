@@ -249,8 +249,9 @@
 </div>
 
 <script>
-  const SHEET_ID = "17yq77PnT9igANtm_PvOYcKreRp4od3OScs7lDc4VR1E";
-  const CSV_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+  const SHEET_ID  = "17yq77PnT9igANtm_PvOYcKreRp4od3OScs7lDc4VR1E";
+  const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+  const META_URL  = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=1702836493`;
   const PAGE_SIZE = 10;
   const LOCKED_MSG = "Only Sai Kumar has access to it.";
 
@@ -293,15 +294,22 @@
 
   async function fetchJobs() {
     try {
-      const res  = await fetch(CSV_URL);
-      const text = await res.text();
-      allJobs = parseCSV(text);
+      const [jobsRes, metaRes] = await Promise.all([fetch(CSV_URL), fetch(META_URL)]);
+      const jobsText = await jobsRes.text();
+      const metaText = await metaRes.text();
+
+      allJobs = parseCSV(jobsText);
+
+      // Meta sheet: single row "last_scraped,<timestamp>"
+      const metaParts = metaText.trim().split(",");
+      const lastScraped = metaParts.slice(1).join(",").trim();
+      document.getElementById("last-updated").textContent =
+        lastScraped ? `Last scraped: ${lastScraped}` : "";
+
       updateCounts();
       updateStats();
       populateCompanyFilter();
       renderList();
-      document.getElementById("last-updated").textContent =
-        "Updated " + new Date().toLocaleTimeString();
     } catch (e) {
       document.getElementById("job-list").innerHTML =
         `<div class="empty">Failed to load jobs. Please try again later.</div>`;
@@ -365,7 +373,10 @@
 
     return `
       <div class="job-card">
-        <div class="score-badge ${scoreClass}">${score || "—"}</div>
+        <div class="tip-wrap">
+          <div class="score-badge ${scoreClass}">${score || "—"}</div>
+          <div class="tooltip">Relevance score — higher means more matching skills found in the job description</div>
+        </div>
         <div class="job-info">
           <div class="job-title">${esc(job.Title)}</div>
           <div class="job-meta">
