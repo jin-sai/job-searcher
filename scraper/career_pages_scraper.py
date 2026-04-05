@@ -551,25 +551,40 @@ def run_career_page_scraper():
         total_added += count
         time.sleep(2)
 
-    # Browser-based companies
-    if browser_companies:
+    # Browser-based companies — group by user_agent so each UA gets its own context.
+    # Companies with "user_agent": null use Playwright's default (no UA set).
+    # Companies with no "user_agent" key use the global Mac Chrome UA.
+    _DEFAULT_UA = (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/120.0.0.0 Safari/537.36"
+    )
+    _SENTINEL = object()  # distinguishes "key absent" from explicit null
+
+    def _ua_group(c):
+        v = c.get("user_agent", _SENTINEL)
+        return None if v is None else (v if v is not _SENTINEL else _DEFAULT_UA)
+
+    ua_groups: dict = {}
+    for c in browser_companies:
+        key = _ua_group(c)
+        ua_groups.setdefault(key, []).append(c)
+
+    if ua_groups:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            context = browser.new_context(
-                user_agent=(
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/120.0.0.0 Safari/537.36"
-                )
-            )
-            page        = context.new_page()
-            detail_page = context.new_page()
+            for ua, group in ua_groups.items():
+                ctx_kwargs = {"user_agent": ua} if ua else {}
+                context     = browser.new_context(**ctx_kwargs)
+                page        = context.new_page()
+                detail_page = context.new_page()
 
-            for company in browser_companies:
-                count = scrape_company(page, detail_page, company, existing_urls, worksheet)
-                total_added += count
-                time.sleep(2)
+                for company in group:
+                    count = scrape_company(page, detail_page, company, existing_urls, worksheet)
+                    total_added += count
+                    time.sleep(2)
 
+                context.close()
             browser.close()
 
     print(f"\nDone. {total_added} new jobs added from career pages.")

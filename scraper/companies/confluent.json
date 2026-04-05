@@ -1,0 +1,36 @@
+{
+  "name": "Confluent",
+  "url": "https://careers.confluent.io/jobs/india",
+  "user_agent": null,
+  "card_selector": "div[class*=\"border-t\"][class*=\"gap-y\"]",
+  "title_selector": "a[href*=\"/job/\"] p",
+  "location_js": "el => { let a = el.querySelector('a[href*=\"/job/\"]'); let next = a ? a.nextElementSibling : null; return next ? next.innerText.trim() : ''; }",
+  "link_selector": "a[href*=\"/job/\"]",
+  "link_attr": "href",
+  "link_prefix": "https://careers.confluent.io",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "india",
+    "remote"
+  ]
+}
