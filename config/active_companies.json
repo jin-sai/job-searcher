@@ -16,5 +16,6 @@
   "stripe",
   "mongodb",
   "elastic",
-  "confluent"
+  "confluent",
+  "grafana"
 ]
