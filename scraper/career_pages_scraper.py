@@ -318,10 +318,38 @@ def scrape_company_api(company: dict, existing_urls: set, worksheet) -> int:
 
         jobs = data.get("positions", data.get("jobs", []))
 
+        # Optional: key name to find location inside job metadata list
+        metadata_location_key = company.get("metadata_location_key")
+        metadata_dept_key     = company.get("metadata_dept_key")
+
         for job in jobs:
             title    = job.get("name", job.get("title", "")).strip()
-            loc_raw  = job.get("location", "")
-            location = (loc_raw.get("name", "") if isinstance(loc_raw, dict) else loc_raw).strip()
+
+            # Metadata-based location (e.g. Greenhouse with Job Posting Location)
+            if metadata_location_key:
+                locations = []
+                for m in job.get("metadata", []):
+                    if m.get("name") == metadata_location_key:
+                        val = m.get("value", [])
+                        locations = val if isinstance(val, list) else [val]
+                        break
+                location = ", ".join(locations)
+            else:
+                loc_raw  = job.get("location", "")
+                location = (loc_raw.get("name", "") if isinstance(loc_raw, dict) else loc_raw).strip()
+
+            # Metadata-based department filter (e.g. Engineering only)
+            if metadata_dept_key:
+                dept_filter = company.get("metadata_dept_values", [])
+                job_depts = []
+                for m in job.get("metadata", []):
+                    if m.get("name") == metadata_dept_key:
+                        val = m.get("value", [])
+                        job_depts = val if isinstance(val, list) else [val]
+                        break
+                if dept_filter and not any(d in job_depts for d in dept_filter):
+                    continue
+
             href     = normalize_url(job.get("absolute_url", job.get("canonicalPositionUrl", job.get("apply_url", job.get("url", "")))).strip())
 
             if not title or not href:
