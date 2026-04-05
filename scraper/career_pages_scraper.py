@@ -258,22 +258,38 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
             return 0
 
         location_key = company.get("graphql_location_key", "locations")
+        url_key      = company.get("graphql_url_key")   # field containing relative/absolute URL
+        raw_fields   = company.get("graphql_raw_fields", False)  # True when fields are {raw: value} dicts
+
+        def unwrap(val):
+            """Extract .raw value if field is an App Search {raw: value} dict."""
+            if raw_fields and isinstance(val, dict):
+                return val.get("raw", "")
+            return val
 
         for job in jobs:
-            job_id   = str(job.get("id", "")).strip()
-            title    = job.get("title", "").strip()
-            loc_raw  = job.get(location_key, [])
-            location = ", ".join(loc_raw) if isinstance(loc_raw, list) else str(loc_raw)
+            title   = str(unwrap(job.get("title", ""))).strip()
+            loc_val = unwrap(job.get(location_key, []))
+            location = ", ".join(loc_val) if isinstance(loc_val, list) else str(loc_val)
 
-            if not title or not job_id:
+            if not title:
                 continue
             if not is_matching_role(title, company):
                 continue
             if not is_matching_location(location, company):
                 continue
 
-            href = normalize_url(job_url_prefix + job_id + "/")
-            if href in existing_urls:
+            if url_key:
+                url_path = str(unwrap(job.get(url_key, ""))).strip().lstrip("/")
+                href = normalize_url(job_url_prefix + url_path)
+                job_id = extract_job_id(href, company)
+            else:
+                job_id = str(unwrap(job.get("id", ""))).strip()
+                if not job_id:
+                    continue
+                href = normalize_url(job_url_prefix + job_id + "/")
+
+            if not href or href in existing_urls:
                 continue
 
             work_mode = detect_work_mode(title, location)
@@ -294,7 +310,7 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
             worksheet.append_row(row)
             existing_urls.add(href)
             added += 1
-            print(f"  + {title} ({location}){' | ' + work_mode if work_mode else ''} | ID: {job_id}")
+            print(f"  + {title} ({location}){' | ' + work_mode if work_mode else ''}{' | ID: ' + job_id if job_id else ''}")
 
     except Exception as e:
         print(f"  [ERROR] {company['name']}: {e}")

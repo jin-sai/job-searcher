@@ -1,0 +1,35 @@
+{
+  "name": "Elastic",
+  "graphql_url": "https://jobs.elastic.co/?q=india&size=n_500_n",
+  "graphql_endpoint": "api/appSearch",
+  "graphql_jobs_key": ["results"],
+  "graphql_location_key": "location",
+  "graphql_url_key": "url",
+  "graphql_raw_fields": true,
+  "job_url_prefix": "https://jobs.elastic.co/",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "india",
+    "remote"
+  ]
+}
