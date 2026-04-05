@@ -339,6 +339,270 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
     return added
 
 
+# ─── POST API Scraper (mynexthire / custom POST endpoints) ───────────────────
+
+def scrape_company_post_api(company: dict, existing_urls: set, worksheet) -> int:
+    """Fetch jobs via a POST JSON API with custom headers and body."""
+    added = 0
+    print(f"\nScraping {company['name']} (POST API)...")
+
+    try:
+        headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+        headers.update(company.get("post_api_headers", {}))
+
+        body = json.dumps(company.get("post_api_body", {})).encode()
+        req  = urllib.request.Request(
+            company["post_api_url"],
+            data=body,
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.loads(r.read())
+
+        # Traverse nested key path to reach jobs list
+        jobs: list = data
+        for key in company.get("post_api_jobs_key", []):
+            jobs = jobs[key]
+
+        title_key    = company.get("post_api_title_key", "title")
+        location_key = company.get("post_api_location_key", "location")
+        id_key       = company.get("post_api_id_key")
+        date_key     = company.get("post_api_date_key")
+        field_filter = company.get("post_api_field_filter", {})
+
+        for job in jobs:
+            # Field-level filter (e.g. buName = "Technology")
+            if field_filter and any(job.get(k) != v for k, v in field_filter.items()):
+                continue
+
+            title    = str(job.get(title_key, "")).strip()
+            loc_raw  = job.get(location_key, "")
+            location = (loc_raw if isinstance(loc_raw, str) else ", ".join(loc_raw)).strip()
+
+            if not title:
+                continue
+            if not is_matching_role(title, company):
+                continue
+            if not is_matching_location(location, company):
+                continue
+
+            # Build URL — hash-based SPAs must NOT be normalize_url'd
+            if id_key:
+                job_id = str(job.get(id_key, "")).strip()
+                href   = company["job_url_prefix"] + job_id
+            else:
+                href   = normalize_url(str(job.get("url", "")).strip())
+                job_id = extract_job_id(href, company)
+
+            if not href or href in existing_urls:
+                continue
+
+            date_posted = ""
+            if date_key and job.get(date_key):
+                date_posted = str(job[date_key])[:10]  # "2026-04-03T14:57:23+0000" → "2026-04-03"
+
+            work_mode = detect_work_mode(title, location)
+
+            row = [
+                title,
+                company["name"],
+                location,
+                work_mode,
+                job_id,
+                href,
+                "",   # CTC
+                date_posted,
+                datetime.today().strftime("%Y-%m-%d"),
+                "Career Page",
+                "New", "", "", "", "", "", "", "", "", "", "",
+            ]
+            worksheet.append_row(row)
+            existing_urls.add(href)
+            added += 1
+            print(f"  + {title} ({location}){' | ' + work_mode if work_mode else ''}{' | ID: ' + job_id if job_id else ''}")
+
+    except Exception as e:
+        print(f"  [ERROR] {company['name']}: {e}")
+
+    return added
+
+
+# ─── RippleHire Scraper (XML POST + pagination) ──────────────────────────────
+
+def scrape_company_ripplehire(company: dict, existing_urls: set, worksheet) -> int:
+    """Fetch jobs from RippleHire-powered career pages via paginated XML POST."""
+    import xml.etree.ElementTree as ET
+
+    added = 0
+    print(f"\nScraping {company['name']} (RippleHire)...")
+
+    token      = company["ripplehire_token"]
+    acc        = company["ripplehire_acc"]
+    domain     = company["ripplehire_domain"]
+    location   = company.get("ripplehire_location", "")
+    url_prefix = company["job_url_prefix"]
+
+    page_num  = 0
+    page_size = 50
+    total     = None
+
+    try:
+        while True:
+            params = json.dumps({
+                "page": page_num,
+                "search": "*:*",
+                "token": token,
+                "source": "CAREERSITE",
+                "pagesize": page_size,
+                "location": location,
+                "acc": acc,
+            })
+            post_data = urllib.parse.urlencode({"careerSiteUrlParams": params, "lang": "en"}).encode()
+            req = urllib.request.Request(
+                f"https://{domain}/candidate/candidatejobsearch",
+                data=post_data,
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Referer": f"https://{domain}/candidate/?token={token}&lang=en&source=CAREERSITE",
+                    "User-Agent": "Mozilla/5.0",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=20) as r:
+                root = ET.fromstring(r.read())
+
+            if total is None:
+                total = int(root.findtext("totalJobCount") or 0)
+
+            jobs = root.findall("jobVoList/jobVoList")
+            if not jobs:
+                break
+
+            for job in jobs:
+                title    = (job.findtext("jobTitle") or "").strip()
+                location_text = (job.findtext("locations") or job.findtext("jobLocation") or "").strip()
+                job_seq  = (job.findtext("jobSeq") or "").strip()
+
+                if not title or not job_seq:
+                    continue
+                if not is_matching_role(title, company):
+                    continue
+                if not is_matching_location(location_text, company):
+                    continue
+
+                href = url_prefix + job_seq
+                if href in existing_urls:
+                    continue
+
+                work_mode = detect_work_mode(title, location_text)
+                row = [
+                    title, company["name"], location_text, work_mode, job_seq, href,
+                    "", "", datetime.today().strftime("%Y-%m-%d"), "Career Page",
+                    "New", "", "", "", "", "", "", "", "", "", "",
+                ]
+                worksheet.append_row(row)
+                existing_urls.add(href)
+                added += 1
+                print(f"  + {title} ({location_text}){' | ' + work_mode if work_mode else ''}")
+
+            fetched_so_far = (page_num + 1) * page_size
+            if fetched_so_far >= total:
+                break
+            page_num += 1
+
+    except Exception as e:
+        print(f"  [ERROR] {company['name']}: {e}")
+
+    return added
+
+
+# ─── Zwayam Scraper (multipart POST + pagination) ────────────────────────────
+
+def scrape_company_zwayam(company: dict, existing_urls: set, worksheet) -> int:
+    """Fetch jobs from Zwayam-powered career pages via paginated multipart POST."""
+    added = 0
+    print(f"\nScraping {company['name']} (Zwayam)...")
+
+    domain     = company["zwayam_domain"]
+    company_id = company["zwayam_company_id"]
+    url_prefix = company["job_url_prefix"]
+
+    start    = 0
+    has_more = True
+    boundary = "----ZwayamFormBoundary"
+
+    def make_body(pagination_start: int) -> bytes:
+        filter_cri = json.dumps({
+            "paginationStartNo": pagination_start,
+            "selectedCall": "sort",
+            "sortCriteria": {"name": "modifiedDate", "isAscending": False},
+            "anyOfTheseWords": "",
+        })
+        parts = [("filterCri", filter_cri), ("domain", domain), ("companyId", company_id)]
+        body = b""
+        for name, value in parts:
+            body += f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n".encode()
+        body += f"--{boundary}--\r\n".encode()
+        return body
+
+    try:
+        while has_more:
+            req = urllib.request.Request(
+                "https://public.zwayam.com/jobs/search",
+                data=make_body(start),
+                headers={
+                    "User-Agent": "Mozilla/5.0",
+                    "Content-Type": f"multipart/form-data; boundary={boundary}",
+                    "Accept": "application/json",
+                    "Origin": f"https://{domain}",
+                    "Referer": f"https://{domain}/",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = json.loads(r.read())
+
+            result   = data["data"]
+            jobs     = result["data"]
+            has_more = result.get("hasMoreData", False)
+            page_size = int(result.get("facetedSearchConfig", {}).get("paginationHowMuch", 10))
+            start    += page_size
+
+            for job in jobs:
+                source   = job.get("_source", {})
+                title    = source.get("Requisition Title", "").strip()
+                location = source.get("Location", "").strip()
+                job_id   = str(job.get("_id", "")).strip()
+
+                if not title or not job_id:
+                    continue
+                if not is_matching_role(title, company):
+                    continue
+                if not is_matching_location(location, company):
+                    continue
+
+                href = url_prefix + job_id
+                if href in existing_urls:
+                    continue
+
+                work_mode = detect_work_mode(title, location)
+                row = [
+                    title, company["name"], location, work_mode, job_id, href,
+                    "", "", datetime.today().strftime("%Y-%m-%d"), "Career Page",
+                    "New", "", "", "", "", "", "", "", "", "", "",
+                ]
+                worksheet.append_row(row)
+                existing_urls.add(href)
+                added += 1
+                print(f"  + {title} ({location}){' | ' + work_mode if work_mode else ''}")
+
+    except Exception as e:
+        print(f"  [ERROR] {company['name']}: {e}")
+
+    return added
+
+
 # ─── API Scraper (Eightfold / direct JSON endpoints) ─────────────────────────
 
 def scrape_company_api(company: dict, existing_urls: set, worksheet) -> int:
@@ -559,9 +823,30 @@ def run_career_page_scraper():
 
     total_added = 0
 
-    api_companies      = [c for c in companies if c.get("api_url")]
-    graphql_companies  = [c for c in companies if c.get("graphql_url")]
-    browser_companies  = [c for c in companies if not c.get("api_url") and not c.get("graphql_url")]
+    ripplehire_companies = [c for c in companies if c.get("ripplehire_token")]
+    zwayam_companies     = [c for c in companies if c.get("zwayam_domain")]
+    post_api_companies   = [c for c in companies if c.get("post_api_url")]
+    api_companies        = [c for c in companies if c.get("api_url")]
+    graphql_companies    = [c for c in companies if c.get("graphql_url")]
+    browser_companies    = [c for c in companies if not c.get("ripplehire_token") and not c.get("zwayam_domain") and not c.get("post_api_url") and not c.get("api_url") and not c.get("graphql_url")]
+
+    # RippleHire-based companies (XML POST + pagination)
+    for company in ripplehire_companies:
+        count = scrape_company_ripplehire(company, existing_urls, worksheet)
+        total_added += count
+        time.sleep(1)
+
+    # Zwayam-based companies (multipart POST + pagination)
+    for company in zwayam_companies:
+        count = scrape_company_zwayam(company, existing_urls, worksheet)
+        total_added += count
+        time.sleep(1)
+
+    # POST API-based companies (no browser needed)
+    for company in post_api_companies:
+        count = scrape_company_post_api(company, existing_urls, worksheet)
+        total_added += count
+        time.sleep(1)
 
     # API-based companies (no browser needed)
     for company in api_companies:

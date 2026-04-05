@@ -1,0 +1,30 @@
+{
+  "name": "Flipkart",
+  "zwayam_domain": "www.flipkartcareers.com",
+  "zwayam_company_id": "MTUxMTA=",
+  "job_url_prefix": "https://www.flipkartcareers.com/flipkart/jobdetail/",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "india"
+  ]
+}

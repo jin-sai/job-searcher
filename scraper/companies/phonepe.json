@@ -1,0 +1,33 @@
+{
+  "name": "PhonePe",
+  "api_url": "https://boards-api.greenhouse.io/v1/boards/phonepe/jobs",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "software development engineer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer",
+    "engineering manager",
+    "data scientist",
+    "data science"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "india",
+    "pune"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "Paytm",
+  "ripplehire_token": "Jrn4GUz6HCYtOdlkVCzo",
+  "ripplehire_acc": "Paytm",
+  "ripplehire_domain": "paytm.ripplehire.com",
+  "ripplehire_location": "Bangalore+Bengaluru+Hyderabad",
+  "job_url_prefix": "https://paytm.ripplehire.com/candidate/?token=Jrn4GUz6HCYtOdlkVCzo&lang=en&source=CAREERSITE#detail/job/",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer",
+    "member of technical staff"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad"
+  ]
+}

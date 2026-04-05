@@ -1,0 +1,46 @@
+{
+  "name": "Swiggy",
+  "post_api_url": "https://swiggy.mynexthire.com/employer/careers/reqlist/get",
+  "post_api_headers": {
+    "content-type": "application/json"
+  },
+  "post_api_body": {
+    "source": "careers"
+  },
+  "post_api_jobs_key": ["reqDetailsBOList"],
+  "post_api_title_key": "reqTitle",
+  "post_api_location_key": "location",
+  "post_api_id_key": "reqId",
+  "post_api_date_key": "approvedOn",
+  "post_api_field_filter": {
+    "buName": "Technology"
+  },
+  "job_url_prefix": "https://careers.swiggy.com/#/careers?src=careers&reqId=",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "software development engineer",
+    "software dev engineer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer",
+    "engineering manager",
+    "tech lead"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad"
+  ]
+}
