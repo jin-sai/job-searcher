@@ -320,8 +320,9 @@ def scrape_company_api(company: dict, existing_urls: set, worksheet) -> int:
 
         for job in jobs:
             title    = job.get("name", job.get("title", "")).strip()
-            location = job.get("location", "").strip()
-            href     = normalize_url(job.get("canonicalPositionUrl", job.get("apply_url", job.get("url", ""))).strip())
+            loc_raw  = job.get("location", "")
+            location = (loc_raw.get("name", "") if isinstance(loc_raw, dict) else loc_raw).strip()
+            href     = normalize_url(job.get("absolute_url", job.get("canonicalPositionUrl", job.get("apply_url", job.get("url", "")))).strip())
 
             if not title or not href:
                 continue
