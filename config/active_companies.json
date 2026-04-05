@@ -18,5 +18,6 @@
   "elastic",
   "confluent",
   "grafana",
-  "qdrant"
+  "qdrant",
+  "uber"
 ]

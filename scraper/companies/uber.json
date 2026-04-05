@@ -1,0 +1,33 @@
+{
+  "name": "Uber",
+  "graphql_url": "https://www.uber.com/in/en/careers/list/?location=IND-Karn%C4%81taka-Bangalore&location=IND-Telang%C4%81na-Hyderabad",
+  "graphql_endpoint": "loadSearchJobsResults",
+  "graphql_jobs_key": ["data", "results"],
+  "graphql_location_key": "location",
+  "graphql_location_subkey": "city",
+  "graphql_request_override": {"limit": 100},
+  "job_url_prefix": "https://www.uber.com/careers/list/",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad"
+  ]
+}

@@ -236,6 +236,20 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
             except Exception:
                 pass
 
+    request_override = company.get("graphql_request_override")  # e.g. {"limit": 100}
+
+    def handle_route(route):
+        """Intercept matching POST requests and merge in override fields."""
+        if graphql_endpoint in route.request.url and request_override:
+            try:
+                post_data = json.loads(route.request.post_data or "{}")
+                post_data.update(request_override)
+                route.continue_(post_data=json.dumps(post_data))
+            except Exception:
+                route.continue_()
+        else:
+            route.continue_()
+
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -247,6 +261,8 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
                 )
             )
             page = context.new_page()
+            if request_override:
+                page.route("**/*", handle_route)
             page.on("response", handle_response)
             page.goto(company["graphql_url"], timeout=30000)
             page.wait_for_timeout(5000)  # Allow GraphQL response to arrive
@@ -267,10 +283,15 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
                 return val.get("raw", "")
             return val
 
+        location_subkey = company.get("graphql_location_subkey")  # e.g. "city" to extract dict field
+
         for job in jobs:
             title   = str(unwrap(job.get("title", ""))).strip()
             loc_val = unwrap(job.get(location_key, []))
-            location = ", ".join(loc_val) if isinstance(loc_val, list) else str(loc_val)
+            if location_subkey and isinstance(loc_val, dict):
+                location = loc_val.get(location_subkey, "")
+            else:
+                location = ", ".join(loc_val) if isinstance(loc_val, list) else str(loc_val)
 
             if not title:
                 continue
