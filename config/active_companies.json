@@ -17,5 +17,6 @@
   "mongodb",
   "elastic",
   "confluent",
-  "grafana"
+  "grafana",
+  "qdrant"
 ]

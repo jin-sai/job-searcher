@@ -1,0 +1,35 @@
+{
+  "name": "Qdrant",
+  "url": "https://join.com/companies/qdrant",
+  "card_selector": "a[href^=\"https://join.com/companies/qdrant/\"]",
+  "title_selector": "h3",
+  "location_js": "el => { const lines = el.innerText.split('\\n').map(l => l.trim()).filter(l => l); return lines[1] || ''; }",
+  "link_js": "el => el.href",
+  "link_prefix": "",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre",
+    "staff engineer",
+    "engineer"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "india",
+    "remote"
+  ]
+}

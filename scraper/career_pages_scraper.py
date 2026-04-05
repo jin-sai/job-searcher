@@ -439,9 +439,12 @@ def scrape_company(page, detail_page, company: dict, existing_urls: set, workshe
                 continue
 
             if card_selector:
-                card    = cards[i]
-                link_el = card.query_selector(company["link_selector"])
-                href    = link_el.get_attribute(company["link_attr"]) if link_el else ""
+                card = cards[i]
+                if company.get("link_js"):
+                    href = card.evaluate(company["link_js"]) or ""
+                else:
+                    link_el = card.query_selector(company["link_selector"])
+                    href    = link_el.get_attribute(company["link_attr"]) if link_el else ""
                 # Support JS expression for complex location extraction
                 if company.get("location_js"):
                     loc_text = card.evaluate(company["location_js"]) or ""
