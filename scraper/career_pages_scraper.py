@@ -257,12 +257,13 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
             print(f"  [WARN] No jobs intercepted from GraphQL response.")
             return 0
 
+        location_key = company.get("graphql_location_key", "locations")
+
         for job in jobs:
             job_id   = str(job.get("id", "")).strip()
             title    = job.get("title", "").strip()
-            # locations is a list of strings
-            locations = job.get("locations", [])
-            location  = ", ".join(locations) if isinstance(locations, list) else str(locations)
+            loc_raw  = job.get(location_key, [])
+            location = ", ".join(loc_raw) if isinstance(loc_raw, list) else str(loc_raw)
 
             if not title or not job_id:
                 continue

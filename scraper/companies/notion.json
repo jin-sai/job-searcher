@@ -1,0 +1,32 @@
+{
+  "name": "Notion",
+  "graphql_url": "https://jobs.ashbyhq.com/notion",
+  "graphql_endpoint": "ApiJobBoardWithTeams",
+  "graphql_jobs_key": ["data", "jobBoard", "jobPostings"],
+  "graphql_location_key": "locationName",
+  "job_url_prefix": "https://jobs.ashbyhq.com/notion/",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "india",
+    "remote"
+  ]
+}
