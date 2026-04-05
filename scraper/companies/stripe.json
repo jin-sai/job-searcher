@@ -1,0 +1,34 @@
+{
+  "name": "Stripe",
+  "url": "https://stripe.com/jobs/search?remote_locations=Asia+Pacific--India+Remote&office_locations=Asia+Pacific--Bengaluru",
+  "card_selector": "tr.TableRow",
+  "title_selector": "a.JobsListings__link",
+  "location_selector": ".JobsListings__locationDisplayName",
+  "link_selector": "a.JobsListings__link",
+  "link_attr": "href",
+  "link_prefix": "",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "india",
+    "remote"
+  ]
+}
