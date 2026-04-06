@@ -117,7 +117,7 @@ def load_companies() -> list[dict]:
 def parse_posted_date(text: str) -> str:
     """Convert relative or absolute posted text to YYYY-MM-DD.
     Handles: 'Posted Today', 'Posted Yesterday', 'Posted X Days Ago',
-             'Posted 30+ Days Ago', '27 Mar 2026', '2026-03-27'
+             'Posted 30+ Days Ago', '27 Mar 2026', '2026-03-27', 'April 3, 2026'
     Returns empty string if unparseable.
     """
     t = text.strip().lower()
@@ -129,8 +129,8 @@ def parse_posted_date(text: str) -> str:
     match = re.search(r"(\d+)\+?\s*days?\s*ago", t)
     if match:
         return (today - timedelta(days=int(match.group(1)))).strftime("%Y-%m-%d")
-    # Absolute date formats: "27 Mar 2026" or "Mar 27, 2026"
-    for fmt in ("%d %b %Y", "%b %d, %Y", "%Y-%m-%d"):
+    # Absolute date formats: short and full month names, both orderings
+    for fmt in ("%d %b %Y", "%b %d, %Y", "%d %B %Y", "%B %d, %Y", "%Y-%m-%d"):
         try:
             return datetime.strptime(text.strip(), fmt).strftime("%Y-%m-%d")
         except ValueError:
@@ -288,10 +288,14 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
         for job in jobs:
             title   = str(unwrap(job.get("title", ""))).strip()
             loc_val = unwrap(job.get(location_key, []))
+            if loc_val is None:
+                loc_val = []
             if location_subkey and isinstance(loc_val, dict):
                 location = loc_val.get(location_subkey, "")
+            elif isinstance(loc_val, list):
+                location = ", ".join(loc_val)
             else:
-                location = ", ".join(loc_val) if isinstance(loc_val, list) else str(loc_val)
+                location = str(loc_val)
 
             if not title:
                 continue
@@ -376,9 +380,16 @@ def scrape_company_post_api(company: dict, existing_urls: set, worksheet) -> int
             if field_filter and any(job.get(k) != v for k, v in field_filter.items()):
                 continue
 
-            title    = str(job.get(title_key, "")).strip()
+            title    = str(job.get(title_key, "") or "").strip()
             loc_raw  = job.get(location_key, "")
-            location = (loc_raw if isinstance(loc_raw, str) else ", ".join(loc_raw)).strip()
+            if isinstance(loc_raw, str):
+                location = loc_raw.strip()
+            elif isinstance(loc_raw, list):
+                location = ", ".join(str(x) for x in loc_raw).strip()
+            elif isinstance(loc_raw, dict):
+                location = ", ".join(str(v) for v in loc_raw.values() if v).strip()
+            else:
+                location = str(loc_raw or "").strip()
 
             if not title:
                 continue
@@ -507,7 +518,8 @@ def scrape_company_ripplehire(company: dict, existing_urls: set, worksheet) -> i
                 print(f"  + {title} ({location_text}){' | ' + work_mode if work_mode else ''}")
 
             fetched_so_far = (page_num + 1) * page_size
-            if fetched_so_far >= total:
+            # Only break on total if it was actually present in the response (non-zero means it was set)
+            if total and fetched_so_far >= total:
                 break
             page_num += 1
 
@@ -566,11 +578,13 @@ def scrape_company_zwayam(company: dict, existing_urls: set, worksheet) -> int:
             result   = data["data"]
             jobs     = result["data"]
             has_more = result.get("hasMoreData", False)
-            page_size = int(result.get("facetedSearchConfig", {}).get("paginationHowMuch", 10))
+            page_size = int(result.get("facetedSearchConfig", {}).get("paginationHowMuch", 10) or 10)
+            if page_size <= 0:
+                page_size = 10
             start    += page_size
 
             for job in jobs:
-                source   = job.get("_source", {})
+                source   = job.get("_source") or {}
                 title    = source.get("Requisition Title", "").strip()
                 location = source.get("Location", "").strip()
                 job_id   = str(job.get("_id", "")).strip()
@@ -618,14 +632,16 @@ def scrape_company_api(company: dict, existing_urls: set, worksheet) -> int:
         with urllib.request.urlopen(req, timeout=20) as r:
             data = json.loads(r.read())
 
-        jobs = data.get("positions", data.get("jobs", []))
+        jobs = data.get("positions") or data.get("jobs") or []
+        if not jobs and isinstance(data, dict) and "positions" not in data and "jobs" not in data:
+            print(f"  [WARN] API response has no 'positions' or 'jobs' key — top-level keys: {list(data.keys())[:10]}")
 
         # Optional: key name to find location inside job metadata list
         metadata_location_key = company.get("metadata_location_key")
         metadata_dept_key     = company.get("metadata_dept_key")
 
         for job in jobs:
-            title    = job.get("name", job.get("title", "")).strip()
+            title    = str(job.get("name") or job.get("title") or "").strip()
 
             # Metadata-based location (e.g. Greenhouse with Job Posting Location)
             if metadata_location_key:
@@ -652,7 +668,8 @@ def scrape_company_api(company: dict, existing_urls: set, worksheet) -> int:
                 if dept_filter and not any(d in job_depts for d in dept_filter):
                     continue
 
-            href     = normalize_url(job.get("absolute_url", job.get("canonicalPositionUrl", job.get("apply_url", job.get("url", "")))).strip())
+            href_raw = job.get("absolute_url") or job.get("canonicalPositionUrl") or job.get("apply_url") or job.get("url") or ""
+            href     = normalize_url(str(href_raw).strip())
 
             if not title or not href:
                 continue
@@ -715,6 +732,9 @@ def scrape_company(page, detail_page, company: dict, existing_urls: set, workshe
             links        = page.query_selector_all(company["link_selector"])
             posted_dates = page.query_selector_all(company["date_posted_selector"]) if company.get("date_posted_selector") else []
 
+        if not titles:
+            print(f"  [WARN] No job title elements found — selector may be broken or page did not fully render.")
+
         for i, title_el in enumerate(titles):
             if title_el is None:
                 continue
@@ -726,7 +746,11 @@ def scrape_company(page, detail_page, company: dict, existing_urls: set, workshe
             if card_selector:
                 card = cards[i]
                 if company.get("link_js"):
-                    href = card.evaluate(company["link_js"]) or ""
+                    try:
+                        href = card.evaluate(company["link_js"]) or ""
+                    except Exception as e:
+                        print(f"  [WARN] link_js eval failed on card {i}: {e}")
+                        href = ""
                 else:
                     link_el = card.query_selector(company["link_selector"])
                     href    = link_el.get_attribute(company["link_attr"]) if link_el else ""

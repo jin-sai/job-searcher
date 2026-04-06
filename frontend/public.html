@@ -119,9 +119,19 @@
       justify-content: center;
       flex-shrink: 0;
     }
-    .score-badge.high { background: #d1fae5; color: #059669; }
-    .score-badge.mid  { background: #fef3c7; color: #d97706; }
-    .score-badge.low  { background: #f3f4f6; color: #6b7280; }
+    .score-badge.high   { background: #d1fae5; color: #059669; }
+    .score-badge.mid    { background: #fef3c7; color: #d97706; }
+    .score-badge.low    { background: #f3f4f6; color: #6b7280; }
+    .score-badge.verify { background: #fef3c7; color: #d97706; }
+
+    .verify-note {
+      font-size: 12px;
+      color: #d97706;
+      margin-top: 4px;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
 
     .job-info { flex: 1; min-width: 0; }
     .job-title {
@@ -223,6 +233,9 @@
   <button class="tab active" onclick="switchTab('to-apply')">
     To Apply <span class="count" id="count-to-apply">0</span>
   </button>
+  <button class="tab" onclick="switchTab('verify')">
+    Need Verification <span class="count" id="count-verify">0</span>
+  </button>
   <button class="tab" onclick="switchTab('filtered')">
     Filtered Out <span class="count" id="count-filtered">0</span>
   </button>
@@ -231,6 +244,7 @@
 <div class="panel">
   <div class="stats">
     <div class="stat-card"><div class="label">To Apply</div><div class="value" id="stat-new">—</div></div>
+    <div class="stat-card" style="border-color:#fde68a"><div class="label">Need Verification</div><div class="value" id="stat-verify" style="color:#d97706">—</div></div>
     <div class="stat-card"><div class="label">Filtered Out</div><div class="value" id="stat-filtered">—</div></div>
   </div>
 
@@ -324,6 +338,7 @@
 
     return allJobs.filter(j => {
       if (activeTab === "to-apply" && j.Status !== "New")          return false;
+      if (activeTab === "verify"   && j.Status !== "Verify")       return false;
       if (activeTab === "filtered" && j.Status !== "Filtered Out") return false;
       if (company && j.Company !== company)                        return false;
       if (search && !`${j.Title} ${j.Company}`.toLowerCase().includes(search)) return false;
@@ -359,7 +374,9 @@
 
   function renderCard(job) {
     const score      = Number(job.Priority) || 0;
-    const scoreClass = score >= 30 ? "high" : score >= 15 ? "mid" : "low";
+    const isVerify   = activeTab === "verify";
+    const scoreClass = isVerify ? "verify" : score >= 30 ? "high" : score >= 15 ? "mid" : "low";
+    const scoreLbl   = isVerify ? (score || "?") : (score || "—");
     const date       = job["Date Found"] || job["Date Posted"] || "";
     const reason     = job.Notes ? job.Notes.replace("Auto-filtered: ", "") : "";
 
@@ -368,14 +385,25 @@
          ${lockedBtn("Ask Referral")}
          ${lockedBtn("Applied")}
          ${lockedBtn("Not Interested")}`
+      : activeTab === "verify"
+      ? `<a href="${esc(job.URL)}" target="_blank" class="btn btn-primary">Open</a>
+         ${lockedBtn("Applied")}
+         ${lockedBtn("Re-queue")}
+         ${lockedBtn("Dismiss")}`
       : `<a href="${esc(job.URL)}" target="_blank" class="btn btn-primary">Open</a>
          ${lockedBtn("Applied")}`;
+
+    const verifyNote = isVerify && job.Notes
+      ? `<div class="verify-note">⚠ ${esc(job.Notes)}</div>` : "";
 
     return `
       <div class="job-card">
         <div class="tip-wrap">
-          <div class="score-badge ${scoreClass}">${score || "—"}</div>
-          <div class="tooltip">Relevance score — higher means more matching skills found in the job description</div>
+          <div class="score-badge ${scoreClass}">${scoreLbl}</div>
+          <div class="tooltip">${isVerify
+            ? "Score may be unreliable — page did not load fully during filtering"
+            : "Relevance score — higher means more matching skills found in the job description"
+          }</div>
         </div>
         <div class="job-info">
           <div class="job-title">${esc(job.Title)}</div>
@@ -386,6 +414,7 @@
             ${date ? `<span>${date}</span>` : ""}
             ${activeTab === "filtered" && reason ? `<span style="color:#dc2626">${esc(reason)}</span>` : ""}
           </div>
+          ${verifyNote}
         </div>
         <div class="job-actions">${actions}</div>
       </div>`;
@@ -413,7 +442,7 @@
     activeTab   = tab;
     currentPage = 1;
     document.querySelectorAll(".tab").forEach((t, i) => {
-      t.classList.toggle("active", ["to-apply","filtered"][i] === tab);
+      t.classList.toggle("active", ["to-apply","verify","filtered"][i] === tab);
     });
     renderList();
   }
@@ -426,11 +455,13 @@
 
   function updateCounts() {
     document.getElementById("count-to-apply").textContent = allJobs.filter(j => j.Status === "New").length;
+    document.getElementById("count-verify").textContent   = allJobs.filter(j => j.Status === "Verify").length;
     document.getElementById("count-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
   }
 
   function updateStats() {
     document.getElementById("stat-new").textContent      = allJobs.filter(j => j.Status === "New").length;
+    document.getElementById("stat-verify").textContent   = allJobs.filter(j => j.Status === "Verify").length;
     document.getElementById("stat-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
   }
 
