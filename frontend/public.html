@@ -202,6 +202,49 @@
     .empty   { text-align: center; color: #999; padding: 48px 0; font-size: 15px; }
     .loading { text-align: center; color: #999; padding: 48px 0; }
 
+    /* Referral grouped view */
+    .company-group {
+      border: 1px solid #c7d0e8;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .company-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      background: #f8f9ff;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .company-header:hover { background: #eef0fb; }
+    .company-header.open  { background: #eef0fb; border-bottom: 1px solid #e0e7ff; }
+    .company-name { font-weight: 600; font-size: 15px; flex: 1; }
+    .company-job-count {
+      background: #4f46e5;
+      color: white;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .company-chevron {
+      font-size: 12px;
+      color: #888;
+      transition: transform 0.2s;
+    }
+    .company-header.open .company-chevron { transform: rotate(180deg); }
+    .company-jobs { display: none; }
+    .company-jobs.open { display: block; }
+    .company-jobs .job-card {
+      border: none;
+      border-radius: 0;
+      border-bottom: 1px solid #f0f2f5;
+    }
+    .company-jobs .job-card:last-child { border-bottom: none; }
+
     /* Tooltip for disabled buttons */
     .tip-wrap { position: relative; display: inline-block; }
     .tip-wrap .tooltip {
@@ -233,6 +276,9 @@
   <button class="tab active" onclick="switchTab('to-apply')">
     To Apply <span class="count" id="count-to-apply">0</span>
   </button>
+  <button class="tab" onclick="switchTab('referral')">
+    Ask For Referral <span class="count" id="count-referral">0</span>
+  </button>
   <button class="tab" onclick="switchTab('verify')">
     Need Verification <span class="count" id="count-verify">0</span>
   </button>
@@ -244,6 +290,7 @@
 <div class="panel">
   <div class="stats">
     <div class="stat-card"><div class="label">To Apply</div><div class="value" id="stat-new">—</div></div>
+    <div class="stat-card"><div class="label">Ask Referral</div><div class="value" id="stat-referral">—</div></div>
     <div class="stat-card" style="border-color:#fde68a"><div class="label">Need Verification</div><div class="value" id="stat-verify" style="color:#d97706">—</div></div>
     <div class="stat-card"><div class="label">Filtered Out</div><div class="value" id="stat-filtered">—</div></div>
   </div>
@@ -269,9 +316,10 @@
   const PAGE_SIZE = 10;
   const LOCKED_MSG = "Only Sai Kumar has access to it.";
 
-  let allJobs    = [];
-  let activeTab  = "to-apply";
-  let currentPage = 1;
+  let allJobs          = [];
+  let activeTab        = "to-apply";
+  let currentPage      = 1;
+  let expandedCompanies = new Set();
 
   // ── CSV Parser ────────────────────────────────────────────────────────────
 
@@ -337,10 +385,11 @@
     const company = document.getElementById("company-filter").value;
 
     return allJobs.filter(j => {
-      if (activeTab === "to-apply" && j.Status !== "New")          return false;
-      if (activeTab === "verify"   && j.Status !== "Verify")       return false;
-      if (activeTab === "filtered" && j.Status !== "Filtered Out") return false;
-      if (company && j.Company !== company)                        return false;
+      if (activeTab === "to-apply"  && j.Status !== "New")                 return false;
+      if (activeTab === "referral"  && j.Status !== "Referral Requested")  return false;
+      if (activeTab === "verify"    && j.Status !== "Verify")              return false;
+      if (activeTab === "filtered"  && j.Status !== "Filtered Out")        return false;
+      if (company && j.Company !== company)                                 return false;
       if (search && !`${j.Title} ${j.Company}`.toLowerCase().includes(search)) return false;
       return true;
     }).sort((a, b) => activeTab === "filtered" ? -1 : (Number(b.Priority) || 0) - (Number(a.Priority) || 0));
@@ -349,7 +398,17 @@
   // ── Render ────────────────────────────────────────────────────────────────
 
   function renderList() {
-    const jobs  = getTabJobs();
+    const jobs = getTabJobs();
+    const list = document.getElementById("job-list");
+
+    if (activeTab === "referral") {
+      document.getElementById("pagination").innerHTML = "";
+      list.innerHTML = jobs.length === 0
+        ? `<div class="empty">No jobs found.</div>`
+        : renderReferralGroups(jobs);
+      return;
+    }
+
     const total = jobs.length;
     const pages = Math.ceil(total / PAGE_SIZE);
     if (currentPage > pages) currentPage = 1;
@@ -357,12 +416,48 @@
     const start = (currentPage - 1) * PAGE_SIZE;
     const slice = jobs.slice(start, start + PAGE_SIZE);
 
-    const list = document.getElementById("job-list");
     list.innerHTML = slice.length === 0
       ? `<div class="empty">No jobs found.</div>`
       : slice.map(renderCard).join("");
 
     renderPagination(pages);
+  }
+
+  function renderReferralGroups(jobs) {
+    const groups = {};
+    for (const job of jobs) {
+      const c = job.Company || "Unknown";
+      if (!groups[c]) groups[c] = [];
+      groups[c].push(job);
+    }
+    for (const c of Object.keys(groups)) {
+      groups[c].sort((a, b) => (Number(b.Priority) || 0) - (Number(a.Priority) || 0));
+    }
+    return Object.keys(groups)
+      .sort((a, b) => (Number(groups[b][0].Priority) || 0) - (Number(groups[a][0].Priority) || 0))
+      .map(company => {
+        const compJobs   = groups[company];
+        const isOpen     = expandedCompanies.has(company);
+        const totalScore = compJobs.reduce((s, j) => s + (Number(j.Priority) || 0), 0);
+        const scoreClass = totalScore >= 60 ? "high" : totalScore >= 30 ? "mid" : "low";
+        const jobRows    = compJobs.map(j => renderCard(j)).join("");
+        return `
+          <div class="company-group">
+            <div class="company-header ${isOpen ? "open" : ""}" data-company="${esc(company)}" onclick="toggleCompany(this.dataset.company)">
+              <div class="score-badge ${scoreClass}" style="min-width:42px;height:42px;font-size:14px">${totalScore}</div>
+              <span class="company-name">${esc(company)}</span>
+              <span class="company-job-count">${compJobs.length} job${compJobs.length !== 1 ? "s" : ""}</span>
+              <span class="company-chevron">▼</span>
+            </div>
+            <div class="company-jobs ${isOpen ? "open" : ""}">${jobRows}</div>
+          </div>`;
+      }).join("");
+  }
+
+  function toggleCompany(company) {
+    if (expandedCompanies.has(company)) expandedCompanies.delete(company);
+    else expandedCompanies.add(company);
+    renderList();
   }
 
   function lockedBtn(label) {
@@ -385,6 +480,8 @@
          ${lockedBtn("Ask Referral")}
          ${lockedBtn("Applied")}
          ${lockedBtn("Not Interested")}`
+      : activeTab === "referral"
+      ? `<a href="${esc(job.URL)}" target="_blank" class="btn btn-primary">Open</a>`
       : activeTab === "verify"
       ? `<a href="${esc(job.URL)}" target="_blank" class="btn btn-primary">Open</a>
          ${lockedBtn("Applied")}
@@ -408,7 +505,7 @@
         <div class="job-info">
           <div class="job-title">${esc(job.Title)}</div>
           <div class="job-meta">
-            <span>${esc(job.Company)}</span>
+            ${activeTab !== "referral" ? `<span>${esc(job.Company)}</span>` : ""}
             <span>${esc(job.Location)}</span>
             ${job["Work Mode"] ? `<span>${esc(job["Work Mode"])}</span>` : ""}
             ${date ? `<span>${date}</span>` : ""}
@@ -439,10 +536,11 @@
   // ── Tabs ──────────────────────────────────────────────────────────────────
 
   function switchTab(tab) {
+    if (tab !== "referral") expandedCompanies.clear();
     activeTab   = tab;
     currentPage = 1;
     document.querySelectorAll(".tab").forEach((t, i) => {
-      t.classList.toggle("active", ["to-apply","verify","filtered"][i] === tab);
+      t.classList.toggle("active", ["to-apply","referral","verify","filtered"][i] === tab);
     });
     renderList();
   }
@@ -455,12 +553,14 @@
 
   function updateCounts() {
     document.getElementById("count-to-apply").textContent = allJobs.filter(j => j.Status === "New").length;
+    document.getElementById("count-referral").textContent = allJobs.filter(j => j.Status === "Referral Requested").length;
     document.getElementById("count-verify").textContent   = allJobs.filter(j => j.Status === "Verify").length;
     document.getElementById("count-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
   }
 
   function updateStats() {
     document.getElementById("stat-new").textContent      = allJobs.filter(j => j.Status === "New").length;
+    document.getElementById("stat-referral").textContent = allJobs.filter(j => j.Status === "Referral Requested").length;
     document.getElementById("stat-verify").textContent   = allJobs.filter(j => j.Status === "Verify").length;
     document.getElementById("stat-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
   }

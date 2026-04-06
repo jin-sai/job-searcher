@@ -182,6 +182,49 @@
     .status-Applied  { background: #d1fae5; color: #059669; }
     .status-Filtered { background: #fee2e2; color: #dc2626; }
 
+    /* Referral grouped view */
+    .company-group {
+      border: 1px solid #c7d0e8;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .company-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 20px;
+      cursor: pointer;
+      background: #f8f9ff;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .company-header:hover { background: #eef0fb; }
+    .company-header.open  { background: #eef0fb; border-bottom: 1px solid #e0e7ff; }
+    .company-name { font-weight: 600; font-size: 15px; flex: 1; }
+    .company-job-count {
+      background: #4f46e5;
+      color: white;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .company-chevron {
+      font-size: 12px;
+      color: #888;
+      transition: transform 0.2s;
+    }
+    .company-header.open .company-chevron { transform: rotate(180deg); }
+    .company-jobs { display: none; }
+    .company-jobs.open { display: block; }
+    .company-jobs .job-card {
+      border: none;
+      border-radius: 0;
+      border-bottom: 1px solid #f0f2f5;
+    }
+    .company-jobs .job-card:last-child { border-bottom: none; }
+
     /* Verify tab */
     .tab-verify.active .count { background: #d97706; }
     .score-badge.verify { background: #fef3c7; color: #d97706; }
@@ -352,10 +395,11 @@
   const API_KEY  = "local-dev-key";
   const PAGE_SIZE = 10;
 
-  let allJobs    = [];
-  let activeTab  = "to-apply";
-  let currentPage = 1;
-  let pendingJobId = null;
+  let allJobs          = [];
+  let activeTab        = "to-apply";
+  let currentPage      = 1;
+  let pendingJobId     = null;
+  let expandedCompanies = new Set();
 
   const headers = { "x-api-key": API_KEY };
 
@@ -396,7 +440,6 @@
       return true;
     }).sort((a, b) => {
       if (activeTab === "filtered")  return -1;
-      if (activeTab === "referral")  return (a.Company || "").localeCompare(b.Company || "");
       return (Number(b.Priority) || 0) - (Number(a.Priority) || 0);
     });
   }
@@ -404,15 +447,25 @@
   // ── Render ────────────────────────────────────────────────────────────────
 
   function renderList() {
-    const jobs  = getTabJobs();
+    const jobs = getTabJobs();
+    const list = document.getElementById("job-list");
+
+    if (activeTab === "referral") {
+      document.getElementById("pagination").innerHTML = "";
+      if (jobs.length === 0) {
+        list.innerHTML = `<div class="empty">No jobs found.</div>`;
+      } else {
+        list.innerHTML = renderReferralGroups(jobs);
+      }
+      return;
+    }
+
     const total = jobs.length;
     const pages = Math.ceil(total / PAGE_SIZE);
     if (currentPage > pages) currentPage = 1;
 
     const start = (currentPage - 1) * PAGE_SIZE;
     const slice = jobs.slice(start, start + PAGE_SIZE);
-
-    const list = document.getElementById("job-list");
 
     if (slice.length === 0) {
       list.innerHTML = `<div class="empty">No jobs found.</div>`;
@@ -421,6 +474,49 @@
     }
 
     renderPagination(pages);
+  }
+
+  function renderReferralGroups(jobs) {
+    // Group by company
+    const groups = {};
+    for (const job of jobs) {
+      const c = job.Company || "Unknown";
+      if (!groups[c]) groups[c] = [];
+      groups[c].push(job);
+    }
+    // Sort jobs within each company by score desc
+    for (const c of Object.keys(groups)) {
+      groups[c].sort((a, b) => (Number(b.Priority) || 0) - (Number(a.Priority) || 0));
+    }
+    // Companies sorted alphabetically
+    return Object.keys(groups)
+      .sort((a, b) => (Number(groups[b][0].Priority) || 0) - (Number(groups[a][0].Priority) || 0))
+      .map(company => {
+      const compJobs = groups[company];
+      const isOpen   = expandedCompanies.has(company);
+      const jobRows  = compJobs.map(j => renderCard(j)).join("");
+      const totalScore = compJobs.reduce((s, j) => s + (Number(j.Priority) || 0), 0);
+      const scoreClass = totalScore >= 60 ? "high" : totalScore >= 30 ? "mid" : "low";
+      return `
+        <div class="company-group">
+          <div class="company-header ${isOpen ? "open" : ""}" data-company="${esc(company)}" onclick="toggleCompany(this.dataset.company)">
+            <div class="score-badge ${scoreClass}" style="min-width:42px;height:42px;font-size:14px">${totalScore}</div>
+            <span class="company-name">${esc(company)}</span>
+            <span class="company-job-count">${compJobs.length} job${compJobs.length !== 1 ? "s" : ""}</span>
+            <span class="company-chevron">▼</span>
+          </div>
+          <div class="company-jobs ${isOpen ? "open" : ""}">${jobRows}</div>
+        </div>`;
+    }).join("");
+  }
+
+  function toggleCompany(company) {
+    if (expandedCompanies.has(company)) {
+      expandedCompanies.delete(company);
+    } else {
+      expandedCompanies.add(company);
+    }
+    renderList();
   }
 
   function renderCard(job) {
@@ -459,7 +555,7 @@
         <div class="job-info">
           <div class="job-title">${esc(job.Title)}</div>
           <div class="job-meta">
-            <span>${esc(job.Company)}</span>
+            ${activeTab !== "referral" ? `<span>${esc(job.Company)}</span>` : ""}
             <span>${esc(job.Location)}</span>
             ${date ? `<span>${date}</span>` : ""}
             ${activeTab === "filtered" ? `<span style="color:#dc2626">${reason}</span>` : ""}
@@ -490,6 +586,7 @@
   // ── Tabs ──────────────────────────────────────────────────────────────────
 
   function switchTab(tab) {
+    if (tab !== "referral") expandedCompanies.clear();
     activeTab   = tab;
     currentPage = 1;
     document.querySelectorAll(".tab").forEach((t, i) => {
