@@ -31,3 +31,6 @@ jobs:
 
       - name: Run filter
         run: python scraper/filter_jobs.py
+
+      - name: Remove old filtered-out jobs
+        run: python scraper/cleanup_old_filtered.py
