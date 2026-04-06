@@ -182,6 +182,18 @@
     .status-Applied  { background: #d1fae5; color: #059669; }
     .status-Filtered { background: #fee2e2; color: #dc2626; }
 
+    /* Verify tab */
+    .tab-verify.active .count { background: #d97706; }
+    .score-badge.verify { background: #fef3c7; color: #d97706; }
+    .verify-note {
+      font-size: 12px;
+      color: #d97706;
+      margin-top: 4px;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
     /* Pagination */
     .pagination {
       display: flex;
@@ -269,6 +281,9 @@
   <button class="tab" onclick="switchTab('applied')">
     Applied <span class="count" id="count-applied">0</span>
   </button>
+  <button class="tab tab-verify" onclick="switchTab('verify')">
+    Need Verification <span class="count" id="count-verify">0</span>
+  </button>
   <button class="tab" onclick="switchTab('filtered')">
     Filtered Out <span class="count" id="count-filtered">0</span>
   </button>
@@ -282,6 +297,7 @@
     <div class="stat-card"><div class="label">To Apply</div><div class="value" id="stat-new">—</div></div>
     <div class="stat-card"><div class="label">Ask Referral</div><div class="value" id="stat-referral">—</div></div>
     <div class="stat-card"><div class="label">Applied</div><div class="value" id="stat-applied">—</div></div>
+    <div class="stat-card" style="border-color:#fde68a"><div class="label">Need Verification</div><div class="value" id="stat-verify" style="color:#d97706">—</div></div>
     <div class="stat-card"><div class="label">Filtered Out</div><div class="value" id="stat-filtered">—</div></div>
   </div>
 
@@ -373,11 +389,16 @@
       if (activeTab === "to-apply"  && j.Status !== "New")                    return false;
       if (activeTab === "referral"  && j.Status !== "Referral Requested")     return false;
       if (activeTab === "applied"   && j.Status !== "Applied")                return false;
+      if (activeTab === "verify"    && j.Status !== "Verify")                 return false;
       if (activeTab === "filtered"  && j.Status !== "Filtered Out")           return false;
       if (company && j.Company !== company)                                   return false;
       if (search && !`${j.Title} ${j.Company}`.toLowerCase().includes(search)) return false;
       return true;
-    }).sort((a, b) => activeTab === "filtered" ? -1 : (Number(b.Priority) || 0) - (Number(a.Priority) || 0));
+    }).sort((a, b) => {
+      if (activeTab === "filtered")  return -1;
+      if (activeTab === "referral")  return (a.Company || "").localeCompare(b.Company || "");
+      return (Number(b.Priority) || 0) - (Number(a.Priority) || 0);
+    });
   }
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -403,10 +424,12 @@
   }
 
   function renderCard(job) {
-    const score     = Number(job.Priority) || 0;
-    const scoreClass = score >= 30 ? "high" : score >= 15 ? "mid" : "low";
-    const date      = job["Date Found"] || job["Date Posted"] || "";
-    const reason    = job.Notes ? `<span title="${job.Notes}">⚠ ${job.Notes.replace("Auto-filtered: ", "")}</span>` : "";
+    const score      = Number(job.Priority) || 0;
+    const isVerify   = activeTab === "verify";
+    const scoreClass = isVerify ? "verify" : score >= 30 ? "high" : score >= 15 ? "mid" : "low";
+    const scoreLbl   = isVerify ? (score || "?") : (score || "—");
+    const date       = job["Date Found"] || job["Date Posted"] || "";
+    const reason     = job.Notes ? `<span title="${job.Notes}">⚠ ${job.Notes.replace("Auto-filtered: ", "")}</span>` : "";
 
     const actions = activeTab === "to-apply"
       ? `<a href="${job.URL}" target="_blank" class="btn btn-primary">Open</a>
@@ -417,14 +440,22 @@
       ? `<a href="${job.URL}" target="_blank" class="btn btn-primary">Open</a>
          <button class="btn btn-success" onclick="openApplyModal('${job["Job ID"]}', '${esc(job.Title)}', '${esc(job.Company)}')">Applied</button>
          <button class="btn btn-danger" onclick="markNotInterested('${job["Job ID"]}')">Not Interested</button>`
+      : activeTab === "verify"
+      ? `<a href="${job.URL}" target="_blank" class="btn btn-primary">Open</a>
+         <button class="btn btn-success" onclick="openApplyModal('${job["Job ID"]}', '${esc(job.Title)}', '${esc(job.Company)}')">Applied</button>
+         <button class="btn btn-outline" onclick="markAsNew('${job["Job ID"]}')">Re-queue</button>
+         <button class="btn btn-danger" onclick="markNotInterested('${job["Job ID"]}')">Dismiss</button>`
       : activeTab === "filtered"
       ? `<a href="${job.URL}" target="_blank" class="btn btn-outline">Open</a>
          <button class="btn btn-success" onclick="openApplyModal('${job["Job ID"]}', '${esc(job.Title)}', '${esc(job.Company)}')">Applied</button>`
       : `<a href="${job.URL}" target="_blank" class="btn btn-outline">Open</a>`;
 
+    const verifyNote = isVerify && job.Notes
+      ? `<div class="verify-note">⚠ ${esc(job.Notes)}</div>` : "";
+
     return `
       <div class="job-card">
-        <div class="score-badge ${scoreClass}">${score || "—"}</div>
+        <div class="score-badge ${scoreClass}">${scoreLbl}</div>
         <div class="job-info">
           <div class="job-title">${esc(job.Title)}</div>
           <div class="job-meta">
@@ -434,6 +465,7 @@
             ${activeTab === "filtered" ? `<span style="color:#dc2626">${reason}</span>` : ""}
             ${activeTab === "applied" && job["Date Applied"] ? `<span>Applied: ${job["Date Applied"]}</span>` : ""}
           </div>
+          ${verifyNote}
         </div>
         <div class="job-actions">${actions}</div>
       </div>`;
@@ -461,7 +493,7 @@
     activeTab   = tab;
     currentPage = 1;
     document.querySelectorAll(".tab").forEach((t, i) => {
-      t.classList.toggle("active", ["to-apply","referral","applied","filtered"][i] === tab);
+      t.classList.toggle("active", ["to-apply","referral","applied","verify","filtered"][i] === tab);
     });
     document.getElementById("dismiss-all-btn").style.display = tab === "to-apply" ? "" : "none";
     renderList();
@@ -482,6 +514,7 @@
     document.getElementById("count-to-apply").textContent = allJobs.filter(j => j.Status === "New").length;
     document.getElementById("count-referral").textContent = allJobs.filter(j => j.Status === "Referral Requested").length;
     document.getElementById("count-applied").textContent  = allJobs.filter(j => j.Status === "Applied").length;
+    document.getElementById("count-verify").textContent   = allJobs.filter(j => j.Status === "Verify").length;
     document.getElementById("count-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
   }
 
@@ -490,6 +523,7 @@
     document.getElementById("stat-new").textContent      = allJobs.filter(j => j.Status === "New").length;
     document.getElementById("stat-referral").textContent = allJobs.filter(j => j.Status === "Referral Requested").length;
     document.getElementById("stat-applied").textContent  = allJobs.filter(j => j.Status === "Applied").length;
+    document.getElementById("stat-verify").textContent   = allJobs.filter(j => j.Status === "Verify").length;
     document.getElementById("stat-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
   }
 
@@ -567,6 +601,24 @@
       updateStats();
       renderList();
       showToast("Marked as Not Interested");
+    } else {
+      showToast("Failed to update");
+    }
+  }
+
+  async function markAsNew(jobId) {
+    const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "New", notes: "" }),
+    });
+    if (res.ok) {
+      const job = allJobs.find(j => String(j["Job ID"]) === String(jobId));
+      if (job) { job.Status = "New"; job.Notes = ""; job.Priority = ""; }
+      updateCounts();
+      updateStats();
+      renderList();
+      showToast("Re-queued for filtering");
     } else {
       showToast("Failed to update");
     }
