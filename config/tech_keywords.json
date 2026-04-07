@@ -1,0 +1,48 @@
+[
+  "java", "python", "golang", "go", "scala", "kotlin", "rust", "typescript", "javascript",
+  "c++", "c#", "ruby", "php", "swift", "r",
+
+  "spring", "spring boot", "spring cloud", "spring mvc", "hibernate", "jpa", "mybatis",
+  "fastapi", "django", "flask", "express", "nestjs", "nodejs", "rails",
+  "react", "angular", "vue", "nextjs", "svelte",
+  "grpc", "thrift", "protobuf",
+
+  "kafka", "rabbitmq", "activemq", "pulsar", "kinesis", "pubsub", "sqs", "sns",
+  "redis", "memcached", "celery",
+
+  "postgresql", "mysql", "mariadb", "oracle", "mssql", "sql server",
+  "mongodb", "cassandra", "couchdb", "dynamodb", "firestore",
+  "elasticsearch", "opensearch", "solr",
+  "clickhouse", "redshift", "bigquery", "snowflake", "hive",
+
+  "kubernetes", "k8s", "docker", "helm", "istio", "envoy", "linkerd",
+  "terraform", "ansible", "puppet", "chef", "pulumi",
+  "aws", "gcp", "azure", "ec2", "s3", "lambda", "fargate", "eks", "ecs", "cloudfront",
+  "cloud run", "app engine", "azure aks",
+  "nginx", "traefik", "haproxy", "apache",
+  "linux", "unix", "bash", "shell",
+
+  "microservices", "monolith", "distributed systems", "event-driven", "event driven",
+  "rest", "restful", "graphql", "api", "webhook", "oauth", "jwt", "saml", "oidc",
+  "concurrency", "multithreading", "async", "reactive", "actor model",
+  "caching", "sharding", "replication", "partitioning", "consensus",
+  "system design", "high availability", "fault tolerance", "scalability",
+
+  "spark", "hadoop", "airflow", "flink", "beam", "dbt", "databricks", "glue",
+  "etl", "data pipeline", "streaming", "batch processing", "data warehouse", "data lake",
+  "machine learning", "ml", "deep learning", "nlp", "llm", "pytorch", "tensorflow",
+  "scikit-learn", "mlflow", "kubeflow",
+
+  "prometheus", "grafana", "datadog", "newrelic", "dynatrace", "kibana", "elk", "splunk",
+  "opentelemetry", "jaeger", "zipkin",
+
+  "git", "github", "gitlab", "bitbucket",
+  "jenkins", "github actions", "gitlab ci", "circleci", "argo", "tekton",
+  "sonarqube", "jira", "confluence",
+
+  "tdd", "bdd", "junit", "testng", "pytest", "mockito", "jest",
+  "agile", "scrum", "kanban", "devops", "sre",
+
+  "backend", "fullstack", "full-stack", "full stack", "platform", "infrastructure",
+  "senior", "lead", "principal", "architect"
+]

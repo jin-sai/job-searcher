@@ -2,7 +2,10 @@ linkedin-jobs-scraper
 playwright
 gspread
 google-auth
+google-auth-httplib2
+google-api-python-client
 fastapi
 uvicorn[standard]
 aiofiles
 pydantic
+jinja2

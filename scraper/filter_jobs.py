@@ -19,6 +19,10 @@ import gspread
 from google.oauth2.service_account import Credentials
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeout
 
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from resume_builder import build_resume
+
 # ─── Configuration ────────────────────────────────────────────────────────────
 
 SHEET_NAME       = "Job Search Tracker"
@@ -187,10 +191,11 @@ def run_filter():
     pending_updates: list = []
     FLUSH_EVERY = 10  # flush to sheet every N jobs
 
-    STATUS_COL    = _col_letter(COL["Status"])
-    PRIORITY_COL  = _col_letter(COL["Priority"])
-    NOTES_COL     = _col_letter(COL["Notes"])
-    WORK_MODE_COL = _col_letter(COL["Work Mode"])
+    STATUS_COL         = _col_letter(COL["Status"])
+    PRIORITY_COL       = _col_letter(COL["Priority"])
+    NOTES_COL          = _col_letter(COL["Notes"])
+    WORK_MODE_COL      = _col_letter(COL["Work Mode"])
+    RESUME_VERSION_COL = _col_letter(COL["Resume Version"])
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -282,6 +287,23 @@ def run_filter():
                 else:
                     print(f"    + Passed | Priority: {priority}")
                 passed += 1
+
+                # Build a tailored resume PDF for this job
+                try:
+                    job_info = {
+                        "title":      title,
+                        "company":    company,
+                        "date_found": job.get("Date Found", ""),
+                    }
+                    drive_link, pdf_path = build_resume(page_text, job_info)
+                    print(f"    📄 Resume: {pdf_path.name}")
+                    if drive_link:
+                        pending_updates.append({"range": f"{RESUME_VERSION_COL}{row_idx}", "values": [[drive_link]]})
+                        print(f"       Drive: {drive_link}")
+                except FileNotFoundError as e:
+                    print(f"    [SKIP] Resume build skipped: {e}")
+                except Exception as e:
+                    print(f"    [WARN] Resume build failed: {e}")
 
             # ── Guard 3: Work Mode backfill ──────────────────────────────────
             # Discovery only checks title + location. If Work Mode is still
