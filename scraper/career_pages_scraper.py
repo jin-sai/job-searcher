@@ -212,8 +212,9 @@ def is_matching_location(location: str, company: dict) -> bool:
 
 # ─── GraphQL Scraper (Meta / intercepted browser response) ───────────────────
 
-def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
+def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> tuple[int, int]:
     """Load a page via Playwright, intercept the GraphQL response, and extract jobs."""
+    found = 0
     added = 0
     print(f"\nScraping {company['name']} (GraphQL)...")
 
@@ -304,6 +305,8 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
             if not is_matching_location(location, company):
                 continue
 
+            found += 1
+
             if url_key:
                 url_path = str(unwrap(job.get(url_key, ""))).strip().lstrip("/")
                 href = normalize_url(job_url_prefix + url_path)
@@ -340,13 +343,14 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> int:
     except Exception as e:
         print(f"  [ERROR] {company['name']}: {e}")
 
-    return added
+    return found, added
 
 
 # ─── POST API Scraper (mynexthire / custom POST endpoints) ───────────────────
 
-def scrape_company_post_api(company: dict, existing_urls: set, worksheet) -> int:
+def scrape_company_post_api(company: dict, existing_urls: set, worksheet) -> tuple[int, int]:
     """Fetch jobs via a POST JSON API with custom headers and body."""
+    found = 0
     added = 0
     print(f"\nScraping {company['name']} (POST API)...")
 
@@ -398,6 +402,8 @@ def scrape_company_post_api(company: dict, existing_urls: set, worksheet) -> int
             if not is_matching_location(location, company):
                 continue
 
+            found += 1
+
             # Build URL — hash-based SPAs must NOT be normalize_url'd
             if id_key:
                 job_id = str(job.get(id_key, "")).strip()
@@ -436,15 +442,16 @@ def scrape_company_post_api(company: dict, existing_urls: set, worksheet) -> int
     except Exception as e:
         print(f"  [ERROR] {company['name']}: {e}")
 
-    return added
+    return found, added
 
 
 # ─── RippleHire Scraper (XML POST + pagination) ──────────────────────────────
 
-def scrape_company_ripplehire(company: dict, existing_urls: set, worksheet) -> int:
+def scrape_company_ripplehire(company: dict, existing_urls: set, worksheet) -> tuple[int, int]:
     """Fetch jobs from RippleHire-powered career pages via paginated XML POST."""
     import xml.etree.ElementTree as ET
 
+    found = 0
     added = 0
     print(f"\nScraping {company['name']} (RippleHire)...")
 
@@ -502,6 +509,8 @@ def scrape_company_ripplehire(company: dict, existing_urls: set, worksheet) -> i
                 if not is_matching_location(location_text, company):
                     continue
 
+                found += 1
+
                 href = url_prefix + job_seq
                 if href in existing_urls:
                     continue
@@ -526,13 +535,14 @@ def scrape_company_ripplehire(company: dict, existing_urls: set, worksheet) -> i
     except Exception as e:
         print(f"  [ERROR] {company['name']}: {e}")
 
-    return added
+    return found, added
 
 
 # ─── Zwayam Scraper (multipart POST + pagination) ────────────────────────────
 
-def scrape_company_zwayam(company: dict, existing_urls: set, worksheet) -> int:
+def scrape_company_zwayam(company: dict, existing_urls: set, worksheet) -> tuple[int, int]:
     """Fetch jobs from Zwayam-powered career pages via paginated multipart POST."""
+    found = 0
     added = 0
     print(f"\nScraping {company['name']} (Zwayam)...")
 
@@ -596,6 +606,8 @@ def scrape_company_zwayam(company: dict, existing_urls: set, worksheet) -> int:
                 if not is_matching_location(location, company):
                     continue
 
+                found += 1
+
                 href = url_prefix + job_id
                 if href in existing_urls:
                     continue
@@ -614,13 +626,14 @@ def scrape_company_zwayam(company: dict, existing_urls: set, worksheet) -> int:
     except Exception as e:
         print(f"  [ERROR] {company['name']}: {e}")
 
-    return added
+    return found, added
 
 
 # ─── API Scraper (Eightfold / direct JSON endpoints) ─────────────────────────
 
-def scrape_company_api(company: dict, existing_urls: set, worksheet) -> int:
+def scrape_company_api(company: dict, existing_urls: set, worksheet) -> tuple[int, int]:
     """Fetch jobs via a direct JSON API (no browser needed)."""
+    found = 0
     added = 0
     print(f"\nScraping {company['name']} (API)...")
 
@@ -677,6 +690,9 @@ def scrape_company_api(company: dict, existing_urls: set, worksheet) -> int:
                 continue
             if not is_matching_location(location, company):
                 continue
+
+            found += 1
+
             if href in existing_urls:
                 continue
 
@@ -704,13 +720,14 @@ def scrape_company_api(company: dict, existing_urls: set, worksheet) -> int:
     except Exception as e:
         print(f"  [ERROR] {company['name']}: {e}")
 
-    return added
+    return found, added
 
 
 # ─── Browser Scraper ──────────────────────────────────────────────────────────
 
-def scrape_company(page, detail_page, company: dict, existing_urls: set, worksheet) -> int:
+def scrape_company(page, detail_page, company: dict, existing_urls: set, worksheet) -> tuple[int, int]:
     """Scrape a single company career page and return count of new jobs added."""
+    found = 0
     added = 0
     print(f"\nScraping {company['name']}...")
 
@@ -783,6 +800,8 @@ def scrape_company(page, detail_page, company: dict, existing_urls: set, workshe
             if not is_matching_location(location, company):
                 continue
 
+            found += 1
+
             # Build full URL
             href = href or ""
             if href and not href.startswith("http"):
@@ -834,7 +853,7 @@ def scrape_company(page, detail_page, company: dict, existing_urls: set, workshe
     except Exception as e:
         print(f"  [ERROR] {company['name']}: {e}")
 
-    return added
+    return found, added
 
 
 def run_career_page_scraper():
@@ -846,6 +865,7 @@ def run_career_page_scraper():
     print(f"Loaded {len(companies)} company configs from {COMPANIES_DIR}.\n")
 
     total_added = 0
+    results = []  # (company_name, mode, found, added)
 
     ripplehire_companies = [c for c in companies if c.get("ripplehire_token")]
     zwayam_companies     = [c for c in companies if c.get("zwayam_domain")]
@@ -856,31 +876,46 @@ def run_career_page_scraper():
 
     # RippleHire-based companies (XML POST + pagination)
     for company in ripplehire_companies:
-        count = scrape_company_ripplehire(company, existing_urls, worksheet)
+        found, count = scrape_company_ripplehire(company, existing_urls, worksheet)
+        if found == 0:
+            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+        results.append((company["name"], "RippleHire", found, count))
         total_added += count
         time.sleep(1)
 
     # Zwayam-based companies (multipart POST + pagination)
     for company in zwayam_companies:
-        count = scrape_company_zwayam(company, existing_urls, worksheet)
+        found, count = scrape_company_zwayam(company, existing_urls, worksheet)
+        if found == 0:
+            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+        results.append((company["name"], "Zwayam", found, count))
         total_added += count
         time.sleep(1)
 
     # POST API-based companies (no browser needed)
     for company in post_api_companies:
-        count = scrape_company_post_api(company, existing_urls, worksheet)
+        found, count = scrape_company_post_api(company, existing_urls, worksheet)
+        if found == 0:
+            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+        results.append((company["name"], "POST API", found, count))
         total_added += count
         time.sleep(1)
 
     # API-based companies (no browser needed)
     for company in api_companies:
-        count = scrape_company_api(company, existing_urls, worksheet)
+        found, count = scrape_company_api(company, existing_urls, worksheet)
+        if found == 0:
+            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+        results.append((company["name"], "API", found, count))
         total_added += count
         time.sleep(1)
 
     # GraphQL-based companies (Playwright + response interception)
     for company in graphql_companies:
-        count = scrape_company_graphql(company, existing_urls, worksheet)
+        found, count = scrape_company_graphql(company, existing_urls, worksheet)
+        if found == 0:
+            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+        results.append((company["name"], "GraphQL", found, count))
         total_added += count
         time.sleep(2)
 
@@ -913,14 +948,30 @@ def run_career_page_scraper():
                 detail_page = context.new_page()
 
                 for company in group:
-                    count = scrape_company(page, detail_page, company, existing_urls, worksheet)
+                    found, count = scrape_company(page, detail_page, company, existing_urls, worksheet)
+                    if found == 0:
+                        print(f"  [WARN] {company['name']}: 0 jobs found — selector/page may have changed")
+                    results.append((company["name"], "Browser", found, count))
                     total_added += count
                     time.sleep(2)
 
                 context.close()
             browser.close()
 
+    # ── Per-company summary ───────────────────────────────────────────────────
+    print(f"\n{'─' * 62}")
+    print(f"{'Company':<28} {'Mode':<10} {'Found':>5}  {'Added':>5}  {'Status'}")
+    print(f"{'─' * 62}")
+    for name, mode, found, count in results:
+        status = "WARN: 0 jobs" if found == 0 else "OK"
+        print(f"{name:<28} {mode:<10} {found:>5}  {count:>5}  {status}")
+    print(f"{'─' * 62}")
+    total_found = sum(f for _, _, f, _ in results)
+    print(f"{'TOTAL':<28} {'':<10} {total_found:>5}  {total_added:>5}")
+    print(f"{'─' * 62}")
+
     print(f"\nDone. {total_added} new jobs added from career pages.")
+    return results
 
 
 if __name__ == "__main__":

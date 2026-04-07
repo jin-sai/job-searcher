@@ -4,6 +4,7 @@ Runs LinkedIn scraper + career pages scraper in sequence.
 Schedule this with cron or GitHub Actions to run daily.
 """
 
+import os
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -21,6 +22,22 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
+
+def write_github_summary(results):
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not summary_path:
+        return
+    total_found = sum(f for _, _, f, _ in results)
+    total_added = sum(c for _, _, _, c in results)
+    with open(summary_path, "a") as f:
+        f.write("## Job Scrape Results\n\n")
+        f.write("| Company | Mode | Found | Added | Status |\n")
+        f.write("|---|---|---|---|---|\n")
+        for name, mode, found, count in results:
+            status = "**⚠ WARN**" if found == 0 else "OK"
+            f.write(f"| {name} | {mode} | {found} | {count} | {status} |\n")
+        f.write(f"\n**Total:** {total_found} found, {total_added} new jobs added\n")
+
 
 def write_scrape_timestamp():
     IST = timezone(timedelta(hours=5, minutes=30))
@@ -45,7 +62,8 @@ if __name__ == "__main__":
     # run_linkedin_scraper()
 
     print("\n[2/2] Running career pages scraper...")
-    run_career_page_scraper()
+    results = run_career_page_scraper()
 
     write_scrape_timestamp()
+    write_github_summary(results)
     print("\nAll done. Check your Google Sheet for new jobs.")
