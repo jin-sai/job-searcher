@@ -3,7 +3,7 @@
   "api_url": "https://boards-api.greenhouse.io/v1/boards/cloudflare/jobs?content=false",
   "metadata_location_key": "Job Posting Location",
   "metadata_dept_key": "Career Site Department",
-  "metadata_dept_values": ["Engineering"],
+  "metadata_dept_values": ["Engineering", "Infrastructure", "Security"],
   "role_keywords": [
     "software engineer",
     "software developer",

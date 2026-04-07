@@ -21,3 +21,6 @@ Thumbs.db
 
 # Local scripts
 start_dashboard.bat
+
+# Generated resume PDFs (uploaded to Drive; no need to commit)
+output/resumes/
