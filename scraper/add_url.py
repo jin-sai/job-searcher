@@ -245,7 +245,7 @@ def process_url(url: str, worksheet, existing_urls: set, config: dict,
     # Build resume if passed
     if status in ("New",) and not fail_reason:
         try:
-            job_info = {"title": title, "company": company, "date_found": date_found}
+            job_info = {"title": title, "company": company, "date_found": date_found, "job_id": job_id}
             pdf_path = build_resume(page_text, job_info)
             print(f"  Resume: {pdf_path.name}")
         except FileNotFoundError as e:

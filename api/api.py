@@ -87,9 +87,30 @@ app.add_middleware(
 STATIC_DIR = Path(__file__).parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+RESUMES_DIR = Path(__file__).parent.parent / "output" / "resumes"
+
 @app.get("/dashboard", include_in_schema=False)
 def dashboard():
     return FileResponse(str(STATIC_DIR / "dashboard.html"))
+
+
+@app.get("/resumes/{filename}", include_in_schema=False)
+def serve_resume(
+    filename: str,
+    x_api_key: Optional[str] = Header(default=None),
+    api_key: Optional[str] = None,   # query param fallback for direct links
+):
+    """Serve a resume PDF from the local resumes directory."""
+    key = x_api_key or api_key
+    if key != API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+    # Prevent path traversal
+    safe_path = (RESUMES_DIR / filename).resolve()
+    if not str(safe_path).startswith(str(RESUMES_DIR.resolve())):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    if not safe_path.exists():
+        raise HTTPException(status_code=404, detail="Resume not found")
+    return FileResponse(str(safe_path), media_type="application/pdf", content_disposition_type="inline")
 
 
 # ─── Auth helper ──────────────────────────────────────────────────────────────

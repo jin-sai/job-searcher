@@ -583,6 +583,7 @@
             ${postedAgo ? `<span>${postedAgo}</span>` : ""}
             ${activeTab === "filtered" ? `<span style="color:#dc2626">${reason}</span>` : ""}
             ${activeTab === "applied" && job["Date Applied"] ? `<span>Applied: ${job["Date Applied"]}</span>` : ""}
+            ${job["Resume Version"] ? `<span><a href="${API_BASE}/resumes/${encodeURIComponent(job['Resume Version'])}?api_key=${API_KEY}" target="_blank" style="color:#4f46e5;text-decoration:none;font-weight:500">📄 ${esc(job['Resume Version'])}</a></span>` : ""}
           </div>
           <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;align-items:center">
             ${workModeBadge(job["Work Mode"])}

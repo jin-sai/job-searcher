@@ -86,6 +86,7 @@ def main():
             "title":      title,
             "company":    company,
             "date_found": job.get("Date Found", date.today().isoformat()),
+            "job_id":     job.get("Job ID", ""),
         }
         try:
             pdf_path = build_resume(page_text, job_info)
