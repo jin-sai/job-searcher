@@ -192,11 +192,28 @@
     {(( edu.institution | le ))}{(( edu.duration | le ))}
     {(( edu.degree | le ))}
     {}
+((* if edu.coursework *))
     \resumeItemListStart
-        \resumeItem{\textbf{Relevant Coursework: } Advanced Data Structures and Algorithms, Pattern Recognition and Machine Learning, Advanced Programming.}
+        \resumeItem{\textbf{Relevant Coursework: } (( edu.coursework | le ))}
     \resumeItemListEnd
+((* else *))
+    \vspace{5pt}
+((* endif *))
+
 ((* endfor *))
 
     \resumeSubHeadingListEnd
+
+((* if achievements *))
+%-----------ACHIEVEMENTS-----------%
+\section{Achievements}
+\resumeSubHeadingListStart
+    \resumeItemListStart
+((* for item in achievements *))
+        \resumeItem{(( item.text | le ))}
+((* endfor *))
+    \resumeItemListEnd
+\resumeSubHeadingListEnd
+((* endif *))
 
 \end{document}

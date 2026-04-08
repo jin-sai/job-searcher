@@ -44,6 +44,8 @@ Reads all `Status = "New"` rows with no Priority set, visits each job URL via Pl
 - Experience cap (`max_experience_years`)
 - Weighted skill keyword scoring → sets `Priority` column to the numeric score; sets `Status = "Filtered Out"` on failure
 
+After a job passes, optionally builds a tailored PDF resume via `scraper/resume_builder.py` and saves it to `output/resumes/<Company>_<Role>_<Date>.pdf`.
+
 ### API (`api/api.py`)
 FastAPI app backed by the same Google Sheet. Key endpoints:
 - `GET /jobs` — all columns, requires `X-API-Key` header (value: `local-dev-key`)

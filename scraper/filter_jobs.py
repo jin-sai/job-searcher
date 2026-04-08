@@ -295,11 +295,8 @@ def run_filter():
                         "company":    company,
                         "date_found": job.get("Date Found", ""),
                     }
-                    drive_link, pdf_path = build_resume(page_text, job_info)
+                    pdf_path = build_resume(page_text, job_info)
                     print(f"    📄 Resume: {pdf_path.name}")
-                    if drive_link:
-                        pending_updates.append({"range": f"{RESUME_VERSION_COL}{row_idx}", "values": [[drive_link]]})
-                        print(f"       Drive: {drive_link}")
                 except FileNotFoundError as e:
                     print(f"    [SKIP] Resume build skipped: {e}")
                 except Exception as e:

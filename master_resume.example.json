@@ -1,0 +1,144 @@
+{
+  "_note": "Copy this to master_resume.json and fill in your details. Tags are lowercase and should match keywords that appear in job descriptions.",
+
+  "name": "Your Name",
+  "email": "you@example.com",
+  "phone": "9999999999",
+  "linkedin": "linkedin.com/in/yourprofile",
+  "github": "github.com/yourusername",
+  "portfolio": "yourportfolio.com",
+  "location": "City, Country",
+  "years_experience": 4,
+
+  "summary": {
+    "specialization": [
+      {
+        "text": "high-throughput distributed systems at scale.",
+        "tags": ["distributed systems", "high throughput"],
+        "default": true
+      },
+      {
+        "text": "event-driven backend systems at scale.",
+        "tags": ["event-driven", "backend systems"]
+      }
+    ],
+    "core": [
+      {
+        "text": "Deep expertise in Java, Spring Boot, Kafka and Kubernetes, building cloud-native applications.",
+        "tags": ["cloud-native"],
+        "default": true
+      }
+    ],
+    "differentiator": "One-line statement about what makes you stand out.",
+    "reputation": "One-line statement about how colleagues or managers describe you."
+  },
+
+  "education": [
+    {
+      "institution": "University Name",
+      "degree": "Degree in Field",
+      "location": "City, Country",
+      "duration": "Month Year -- Month Year",
+      "coursework": {
+        "text": "Relevant Course 1, Relevant Course 2.",
+        "tags": ["machine learning", "ml"]
+      }
+    }
+  ],
+
+  "experience": [
+    {
+      "company": "Company Name",
+      "role": "Job Title",
+      "location": "City, Country",
+      "duration": "Month Year -- Month Year",
+      "min_bullets": 3,
+      "max_bullets": 6,
+      "bullets": [
+        {
+          "text": "Describe your most impactful achievement with metrics.",
+          "tags": ["java", "kafka", "distributed systems"],
+          "mandatory": true
+        },
+        {
+          "text": "Describe another achievement. Use action verbs and numbers.",
+          "tags": ["kubernetes", "docker", "helm"],
+          "mandatory": true
+        },
+        {
+          "text": "Describe a technical problem you solved.",
+          "tags": ["kafka", "opensearch", "performance"],
+          "default_score": 1
+        },
+        {
+          "text": "Describe a process improvement or optimization.",
+          "tags": ["monitoring", "observability", "prometheus"]
+        }
+      ]
+    }
+  ],
+
+  "projects": {
+    "max": 3,
+    "items": [
+      {
+        "name": "Project Name",
+        "tech": "Tech Stack, Comma Separated",
+        "duration": "Year -- Present",
+        "mandatory": true,
+        "default_score": 2,
+        "tags": ["python", "fastapi", "backend"],
+        "bullets": [
+          {"text": "What the project does and what problem it solves."},
+          {"text": "A specific technical achievement or interesting implementation detail."}
+        ]
+      },
+      {
+        "name": "Another Project",
+        "tech": "Tech Stack",
+        "duration": "Year",
+        "mandatory": false,
+        "tags": ["java", "open source"],
+        "bullets": [
+          {"text": "Brief description of this project and your contribution."}
+        ]
+      }
+    ]
+  },
+
+  "achievements": {
+    "items": [
+      {"text": "A notable award, recognition, or competitive achievement."},
+      {"text": "Another achievement worth highlighting."}
+    ]
+  },
+
+  "skills": {
+    "Languages & Frameworks": [
+      {"name": "Java",        "tags": ["java"],                    "mandatory": true},
+      {"name": "Spring Boot", "tags": ["spring boot", "spring"],   "mandatory": true},
+      {"name": "Python",      "tags": ["python"],                  "mandatory": true},
+      {"name": "REST APIs",   "tags": ["rest", "restful", "api"],  "mandatory": true},
+      {"name": "Go",          "tags": ["golang", "go"],            "mandatory": false}
+    ],
+    "DevOps & Cloud": [
+      {"name": "Kubernetes",  "tags": ["kubernetes", "k8s"],       "mandatory": true},
+      {"name": "Docker",      "tags": ["docker", "container"],     "mandatory": true},
+      {"name": "AWS",         "tags": ["aws"],                     "mandatory": true},
+      {"name": "GCP",         "tags": ["gcp", "google cloud"],     "mandatory": false},
+      {"name": "Helm",        "tags": ["helm"],                    "mandatory": false}
+    ],
+    "Data & Messaging": [
+      {"name": "Apache Kafka",    "tags": ["kafka", "streaming"],  "mandatory": true},
+      {"name": "OpenSearch",      "tags": ["opensearch"],          "mandatory": true},
+      {"name": "Elasticsearch",   "tags": ["elasticsearch"],       "mandatory": false},
+      {"name": "Redis",           "tags": ["redis"],               "mandatory": false}
+    ],
+    "Software Development": [
+      {"name": "Microservices",   "tags": ["microservices"],                    "mandatory": true},
+      {"name": "System Design",   "tags": ["system design", "hld", "lld"],     "mandatory": true},
+      {"name": "TDD",             "tags": ["tdd", "unit testing", "testing"],  "mandatory": false},
+      {"name": "CI/CD",           "tags": ["ci/cd", "cicd", "github actions"], "mandatory": false}
+    ]
+  }
+}

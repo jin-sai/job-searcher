@@ -5,11 +5,11 @@ Automated job discovery, filtering, and tracking for backend/SWE roles in Bangal
 ## How It Works
 
 ```
-Step 1: Scrape  →  Step 2: Filter  →  Step 3: Review (Dashboard)
+Step 1: Scrape  →  Step 2: Filter + Resume Build  →  Step 3: Review (Dashboard)
 ```
 
 1. **Scraper** fetches new job listings from company career pages and writes them to Google Sheets
-2. **Filter** visits each job's detail page, scores it against your skill keywords, and marks irrelevant ones as "Filtered Out"
+2. **Filter** visits each job's detail page, scores it against your skill keywords, marks irrelevant ones as "Filtered Out", and builds a tailored PDF resume for passing jobs
 3. **Dashboard** lets you review scored jobs, open URLs, and mark them as Applied or Not Interested
 
 ## Project Structure
@@ -47,7 +47,7 @@ playwright install chromium
 ### 2. Google Sheets API
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Create a project → Enable **Google Sheets API** and **Google Drive API**
+2. Create a project → Enable **Google Sheets API**
 3. Create a Service Account → download the JSON key → save as `credentials.json`
 4. Create a Google Sheet named `"Job Search Tracker"` → share it with the service account email (Editor access)
 
@@ -74,6 +74,20 @@ python -m uvicorn api.api:app --reload --port 8001
 ```
 
 Open `http://127.0.0.1:8001/dashboard` in your browser.
+
+## Resume Builder
+
+After a job passes filtering, `scraper/resume_builder.py` automatically generates a tailored PDF resume and saves it to `output/resumes/<Company>_<Role>_<Date>.pdf`.
+
+**Prerequisites:**
+- `master_resume.json` in the project root (fill in your data and tags)
+- `pdflatex` on PATH: `apt-get install texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended`
+
+You can also build a resume manually for any job URL:
+
+```bash
+python scraper/run_url.py <job-url> --title "Software Engineer" --company "Acme"
+```
 
 ## Active Companies
 

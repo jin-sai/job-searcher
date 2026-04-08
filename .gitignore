@@ -22,5 +22,13 @@ Thumbs.db
 # Local scripts
 start_dashboard.bat
 
-# Generated resume PDFs (uploaded to Drive; no need to commit)
+# Generated resume PDFs and build artifacts
 output/resumes/
+output/*.tex
+output/*.log
+
+# Personal resume data — commit master_resume.example.json instead
+master_resume.json
+
+# Test files
+scraper/test_jd.txt
