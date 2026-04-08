@@ -288,19 +288,19 @@ def run_filter():
                     print(f"    + Passed | Priority: {priority}")
                 passed += 1
 
-                # Build a tailored resume PDF for this job
-                try:
-                    job_info = {
-                        "title":      title,
-                        "company":    company,
-                        "date_found": job.get("Date Found", ""),
-                    }
-                    pdf_path = build_resume(page_text, job_info)
-                    print(f"    📄 Resume: {pdf_path.name}")
-                except FileNotFoundError as e:
-                    print(f"    [SKIP] Resume build skipped: {e}")
-                except Exception as e:
-                    print(f"    [WARN] Resume build failed: {e}")
+                # # Build a tailored resume PDF for this job
+                # try:
+                #     job_info = {
+                #         "title":      title,
+                #         "company":    company,
+                #         "date_found": job.get("Date Found", ""),
+                #     }
+                #     pdf_path = build_resume(page_text, job_info)
+                #     print(f"    📄 Resume: {pdf_path.name}")
+                # except FileNotFoundError as e:
+                #     print(f"    [SKIP] Resume build skipped: {e}")
+                # except Exception as e:
+                #     print(f"    [WARN] Resume build failed: {e}")
 
             # ── Guard 3: Work Mode backfill ──────────────────────────────────
             # Discovery only checks title + location. If Work Mode is still
