@@ -34,6 +34,7 @@ def parse_args():
     url = args[0]
     title   = "Software Engineer"
     company = "Unknown"
+    job_id  = ""
 
     if "--title" in args:
         idx = args.index("--title")
@@ -41,8 +42,11 @@ def parse_args():
     if "--company" in args:
         idx = args.index("--company")
         company = args[idx + 1]
+    if "--job-id" in args:
+        idx = args.index("--job-id")
+        job_id = args[idx + 1]
 
-    return url, title, company
+    return url, title, company, job_id
 
 
 # ─── Scraping ─────────────────────────────────────────────────────────────────
@@ -160,13 +164,13 @@ def print_jd_keywords(page_text: str):
     print("   (* = high-priority: freq ≥ 3 or in tech keyword list)")
 
 
-def run_resume_build(page_text: str, title: str, company: str):
+def run_resume_build(page_text: str, title: str, company: str, job_id: str = ""):
     print("\n── Step 4: Building tailored resume ────────────────────────────────────")
     job_info = {
         "title":      title,
         "company":    company,
         "date_found": date.today().isoformat(),
-        "job_id":     "",
+        "job_id":     job_id,
     }
     try:
         pdf_path = build_resume(page_text, job_info)
@@ -180,12 +184,14 @@ def run_resume_build(page_text: str, title: str, company: str):
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
-    url, title, company = parse_args()
+    url, title, company, job_id = parse_args()
 
     print(f"\n{'='*72}")
     print(f"  Job URL : {url}")
     print(f"  Title   : {title}")
     print(f"  Company : {company}")
+    if job_id:
+        print(f"  Job ID  : {job_id}")
     print(f"{'='*72}")
 
     # Step 1: scrape
@@ -200,7 +206,7 @@ def main():
 
     # Step 4: resume (only if passed)
     if not fail_reason:
-        run_resume_build(page_text, title, company)
+        run_resume_build(page_text, title, company, job_id)
     else:
         print(f"\n── Step 4: Skipping resume build (job filtered out) ─────────────────────")
 

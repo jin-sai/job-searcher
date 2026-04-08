@@ -29,12 +29,15 @@ if "%URL%"=="" goto menu
 
 set TITLE=
 set COMPANY=
+set JOBID=
 set /p TITLE="Job title   (press Enter to skip): "
 set /p COMPANY="Company name (press Enter to skip): "
+set /p JOBID="Job ID       (press Enter to skip): "
 
 set ARGS="%URL%"
 if not "%TITLE%"==""   set ARGS=%ARGS% --title "%TITLE%"
 if not "%COMPANY%"=="" set ARGS=%ARGS% --company "%COMPANY%"
+if not "%JOBID%"==""   set ARGS=%ARGS% --job-id "%JOBID%"
 
 echo.
 python scraper/run_url.py %ARGS%
@@ -45,13 +48,16 @@ goto mode1
 echo.
 set TITLE=
 set COMPANY=
+set JOBID=
 set /p COMPANY="Company name (leave blank to go back): "
 if "%COMPANY%"=="" goto menu
 set /p TITLE="Job title: "
+set /p JOBID="Job ID    (press Enter to skip): "
 
 set ARGS=
 if not "%TITLE%"==""   set ARGS=%ARGS% --title "%TITLE%"
 if not "%COMPANY%"=="" set ARGS=%ARGS% --company "%COMPANY%"
+if not "%JOBID%"==""   set ARGS=%ARGS% --job-id "%JOBID%"
 
 echo.
 python scraper/run_jd.py %ARGS%

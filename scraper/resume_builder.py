@@ -21,6 +21,7 @@ Prerequisites:
 import json
 import re
 import shutil
+from datetime import datetime
 import subprocess
 import tempfile
 from pathlib import Path
@@ -601,7 +602,8 @@ def build_resume(jd_text: str, job_info: dict) -> Path:
     company  = safe(job_info.get("company", "unknown"))[:30]
     role     = safe(job_info.get("title", "role"))[:30]
     date_str = (job_info.get("date_found") or "")[:10].replace("-", "")
-    filename = f"{company}_{role}_{date_str}.pdf"
+    job_id   = safe(job_info.get("job_id") or "") or datetime.now().strftime("%H%M%S")
+    filename = f"{company}_{role}_{date_str}_{job_id}.pdf"
     pdf_path = OUTPUT_DIR / filename
 
     # Trim-until-fit: drop lowest-scoring non-mandatory bullets until 1 page
