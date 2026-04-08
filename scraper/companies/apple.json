@@ -9,6 +9,7 @@
   "link_selector": "h3 a",
   "link_attr": "href",
   "link_prefix": "https://jobs.apple.com",
+  "job_id_url_pattern": "/details/([\\d]+-[\\d]+|[\\d]+)/",
   "role_keywords": [
     "backend",
     "back-end",

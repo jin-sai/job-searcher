@@ -127,8 +127,8 @@ def get_jobs_private(
     if company:
         jobs = [j for j in jobs if j.get("Company", "").lower() == company.lower()]
 
-    # Remove internal row index from response
-    return [_strip_internal(j) for j in jobs]
+    # Expose row number as stable unique id
+    return [_with_row_id(j) for j in jobs]
 
 
 @app.get("/jobs/public")
@@ -157,9 +157,13 @@ def update_job(
     require_api_key(x_api_key)
 
     jobs = load_jobs()
-    match = next((j for j in jobs if str(j.get("Job ID", "")) == job_id), None)
+    # Primary: match by row id (stable unique identifier)
+    match = next((j for j in jobs if str(j["_row"]) == job_id), None)
     if not match:
-        raise HTTPException(status_code=404, detail=f"Job ID '{job_id}' not found")
+        # Legacy fallback: match by Job ID column value
+        match = next((j for j in jobs if str(j.get("Job ID", "")) == job_id), None)
+    if not match:
+        raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found")
 
     row_idx = match["_row"]
     ws      = get_worksheet()
@@ -253,6 +257,12 @@ def refresh_cache(x_api_key: Optional[str] = Header(default=None)):
 
 def _strip_internal(job: dict) -> dict:
     return {k: v for k, v in job.items() if not k.startswith("_")}
+
+
+def _with_row_id(job: dict) -> dict:
+    d = _strip_internal(job)
+    d["_id"] = job["_row"]   # expose row number as unique id
+    return d
 
 
 def _public_view(job: dict) -> dict:
