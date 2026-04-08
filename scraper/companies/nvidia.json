@@ -28,7 +28,10 @@
     "verification",
     "vlsi",
     "physical design",
-    "analog"
+    "analog",
+    "firmware",
+    "embedded",
+    "fpga"
   ],
   "location_keywords": [
     "bangalore",

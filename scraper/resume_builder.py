@@ -1,5 +1,5 @@
 """
-Resume Builder — Step 3 (optional): Tailored PDF resume per passing job.
+Resume Builder - Step 3 (optional): Tailored PDF resume per passing job.
 
 Given a job's description text and basic info (title, company), this module:
   1. Extracts keywords from the JD (frequency + curated tech list)
@@ -10,7 +10,7 @@ Given a job's description text and basic info (title, company), this module:
   6. Saves to output/resumes/<Company>_<Role>_<Date>.pdf
 
 Called from filter_jobs.py after a job passes all filters.
-Fails gracefully — a resume build failure never crashes the filter run.
+Fails gracefully - a resume build failure never crashes the filter run.
 
 Prerequisites:
   - master_resume.json in project root (fill in your data + tags)
@@ -76,7 +76,7 @@ def latex_escape(text: str) -> str:
 def _jinja_env() -> Environment:
     env = Environment(
         loader=FileSystemLoader(str(TEMPLATE_DIR)),
-        # Custom delimiters — none of these appear in LaTeX source
+        # Custom delimiters - none of these appear in LaTeX source
         block_start_string="((*",
         block_end_string="*))",
         variable_start_string="((",
@@ -102,8 +102,8 @@ def _load_tech_keywords() -> set[str]:
 def extract_jd_keywords(jd_text: str) -> tuple[dict[str, int], set[str]]:
     """
     Returns:
-        freq          — {word: count} for all non-stop words in the JD
-        high_priority — words appearing 3+ times OR in the curated tech list
+        freq          - {word: count} for all non-stop words in the JD
+        high_priority - words appearing 3+ times OR in the curated tech list
     """
     tech_set = _load_tech_keywords()
 
@@ -135,19 +135,43 @@ def extract_jd_keywords(jd_text: str) -> tuple[dict[str, int], set[str]]:
 
 # ─── Scoring ──────────────────────────────────────────────────────────────────
 
-def _score_bullet(bullet: dict, freq: dict[str, int], high_priority: set[str]) -> float:
+def _score_tags(
+    tags: list[str], freq: dict[str, int], high_priority: set[str]
+) -> tuple[float, list[tuple[str, int, bool]]]:
+    """
+    Score a list of tags against the JD.
+    Returns (score, hits) where hits = [(tag, base_freq, is_high_priority), ...]
+    """
+    score = 0.0
+    hits: list[tuple[str, int, bool]] = []
+    for tag in tags:
+        tag_lower = tag.lower()
+        if tag_lower in freq:
+            base = freq[tag_lower]
+            hp   = tag_lower in high_priority
+            score += base + (2.0 if hp else 0)
+            hits.append((tag, base, hp))
+    return score, hits
+
+
+def _fmt_hits(hits: list[tuple[str, int, bool]]) -> str:
+    if not hits:
+        return "no tag matches"
+    return ", ".join(
+        f"{tag}({base}{'+2hp' if hp else ''})" for tag, base, hp in hits
+    )
+
+
+def _score_bullet(
+    bullet: dict, freq: dict[str, int], high_priority: set[str]
+) -> tuple[float, list[tuple[str, int, bool]]]:
     """
     Score = sum of JD frequencies for each tag that appears in the JD,
     plus a bonus for high-priority (common or tech-list) matches.
+    Returns (score, hits).
     """
-    tag_score = 0.0
-    for tag in bullet.get("tags", []):
-        tag_lower = tag.lower()
-        if tag_lower in freq:
-            tag_score += freq[tag_lower]
-            if tag_lower in high_priority:
-                tag_score += 2.0   # bonus for high-signal matches
-    return max(float(bullet.get("default_score", 0)), tag_score)
+    tag_score, hits = _score_tags(bullet.get("tags", []), freq, high_priority)
+    return max(float(bullet.get("default_score", 0)), tag_score), hits
 
 
 def _select_bullets(
@@ -156,21 +180,32 @@ def _select_bullets(
     high_priority: set[str],
     min_bullets: int = 2,
     max_bullets: int = 5,
+    label: str = "",
+    verbose: bool = False,
 ) -> list[dict]:
-    scored = [(b, _score_bullet(b, freq, high_priority)) for b in bullets]
+    scored = [(b, *_score_bullet(b, freq, high_priority)) for b in bullets]
 
     # Select which bullets to include (by score), then restore original JSON order
-    positive_idx = {i for i, (_, s) in enumerate(scored) if s > 0}
+    positive_idx = {i for i, (_, s, _h) in enumerate(scored) if s > 0}
     if len(positive_idx) > max_bullets:
         # Keep only the top max_bullets by score, ties broken by original order
         top = sorted(positive_idx, key=lambda i: scored[i][1], reverse=True)[:max_bullets]
         positive_idx = set(top)
     if len(positive_idx) < min_bullets:
-        # Not enough positive-scoring bullets — pad with next best in original order
+        # Not enough positive-scoring bullets - pad with next best in original order
         all_idx = sorted(range(len(scored)), key=lambda i: scored[i][1], reverse=True)
         positive_idx = set(all_idx[:min_bullets])
 
-    return [b for i, (b, _) in enumerate(scored) if i in positive_idx]
+    if verbose:
+        for i, (b, score, hits) in enumerate(scored):
+            selected  = i in positive_idx
+            marker    = "+" if selected else "-"
+            reason    = "(padded - below min)" if (i in positive_idx and score == 0) else ""
+            text_snippet = (b.get("text", "") or "")[:90].replace("\n", " ")
+            print(f"      {marker} score={score:.1f}  [{_fmt_hits(hits)}]  {reason}")
+            print(f"        \"{text_snippet}\"")
+
+    return [b for i, (b, _s, _h) in enumerate(scored) if i in positive_idx]
 
 
 # ─── Summary builder ──────────────────────────────────────────────────────────
@@ -207,6 +242,7 @@ def _build_summary(top_tags: list[str], job_info: dict, years_exp: int) -> str:
 def _build_summary_from_structured(
     summary_obj: dict, freq: dict[str, int], high_priority: set[str],
     job_info: dict | None = None, years_exp: int = 4,
+    verbose: bool = False,
 ) -> str:
     """Compose a summary string from the structured summary object in master_resume.json.
 
@@ -215,19 +251,20 @@ def _build_summary_from_structured(
     ``"default": true`` is used as a fallback.
 
     The specialization part is prefixed with:
-      "Backend Engineer with N+ years of experience in ..."   — if job title contains "backend engineer"
-      "Backend Software Engineer with N+ years of experience in ..."  — otherwise (default)
+      "Backend Engineer with N+ years of experience in ..."   - if job title contains "backend engineer"
+      "Backend Software Engineer with N+ years of experience in ..."  - otherwise (default)
     """
 
-    def best_variant(variants: list) -> str:
+    def best_variant(variants: list, section: str) -> str:
         default_text = next((v["text"] for v in variants if v.get("default")), None)
         best_text  = default_text or (variants[0]["text"] if variants else "")
         best_score = -1
         for v in variants:
-            score = sum(
-                freq.get(t.lower(), 0) + (2 if t.lower() in high_priority else 0)
-                for t in v.get("tags", [])
-            )
+            _, hits = _score_tags(v.get("tags", []), freq, high_priority)
+            score   = sum(base + (2 if hp else 0) for _, base, hp in hits)
+            if verbose:
+                marker = ">" if score > best_score else " "
+                print(f"      {marker} score={score:.1f}  [{_fmt_hits(hits)}]  \"{v['text'][:70]}\"")
             if score > best_score:
                 best_score = score
                 best_text  = v["text"]
@@ -241,10 +278,14 @@ def _build_summary_from_structured(
 
     parts: list[str] = []
     if "specialization" in summary_obj:
-        spec = best_variant(summary_obj["specialization"])
+        if verbose:
+            print(f"    specialization variants:")
+        spec = best_variant(summary_obj["specialization"], "specialization")
         parts.append(f"{role_prefix} with {years_exp}+ years of experience building {spec}")
     if "core" in summary_obj:
-        parts.append(best_variant(summary_obj["core"]))
+        if verbose:
+            print(f"    core variants:")
+        parts.append(best_variant(summary_obj["core"], "core"))
     if "differentiator" in summary_obj:
         parts.append(str(summary_obj["differentiator"]))
     if "reputation" in summary_obj:
@@ -255,57 +296,121 @@ def _build_summary_from_structured(
 # ─── Skills selection ─────────────────────────────────────────────────────────
 
 def _select_skills(
-    skills_dict: dict, freq: dict[str, int], high_priority: set[str]
+    skills_dict: dict, freq: dict[str, int], high_priority: set[str],
+    verbose: bool = False,
 ) -> dict[str, list[str]]:
     """Return {category: [skill_name, ...]} filtered by mandatory flag and JD relevance."""
     result: dict[str, list[str]] = {}
     for category, items in skills_dict.items():
         names: list[str] = []
+        log_lines: list[str] = []
         for item in items:
             if item.get("mandatory"):
                 names.append(item["name"])
-            elif any(t.lower() in freq for t in item.get("tags", [])):
-                names.append(item["name"])
+                if verbose:
+                    log_lines.append(f"+ {item['name']} (mandatory)")
+            else:
+                matched_tags = [t for t in item.get("tags", []) if t.lower() in freq]
+                if matched_tags:
+                    names.append(item["name"])
+                    if verbose:
+                        log_lines.append(f"+ {item['name']} (tags: {', '.join(matched_tags)})")
+                elif verbose:
+                    log_lines.append(f"- {item['name']}")
         if names:
             result[category] = names
+        if verbose and log_lines:
+            print(f"    {category}: " + "  ".join(log_lines))
     return result
 
 
 # ─── Resume selection ─────────────────────────────────────────────────────────
 
-def select_resume(master: dict, freq: dict[str, int], high_priority: set[str], job_info: dict) -> dict:
+def select_resume(
+    master: dict, freq: dict[str, int], high_priority: set[str],
+    job_info: dict, verbose: bool = False,
+) -> dict:
     """Pick the best bullets from master_resume.json for this JD."""
 
-    # Experience: select bullets per role, respecting per-entry min/max overrides
+    if verbose:
+        print("\n-- Resume selection ----------------------------------------------------------")
+
+    # ── Experience ────────────────────────────────────────────────────────────
     experience = []
     for exp in master.get("experience", []):
+        if verbose:
+            print(f"\n  EXPERIENCE  {exp.get('company', '')} | {exp.get('role', '')}")
         selected = _select_bullets(
             exp["bullets"], freq, high_priority,
             min_bullets=exp.get("min_bullets", 2),
             max_bullets=exp.get("max_bullets", 5),
+            label=exp.get("company", ""),
+            verbose=verbose,
         )
         experience.append({**exp, "bullets": selected})
 
-    # Projects: score each project by aggregate tag frequency, keep top 3
+    # ── Projects ──────────────────────────────────────────────────────────────
     all_projects = master.get("projects", {}).get("items", [])
     max_projects = master.get("projects", {}).get("max", 3)
 
     project_scores = []
     for proj in all_projects:
-        proj_tag_score = sum(
-            freq.get(t.lower(), 0) + (2 if t.lower() in high_priority else 0)
-            for t in proj.get("tags", [])
-        )
+        proj_tag_score, proj_hits = _score_tags(proj.get("tags", []), freq, high_priority)
         proj_score = max(proj.get("default_score", 0), proj_tag_score)
         selected = _select_bullets(proj.get("bullets", []), freq, high_priority,
                                    min_bullets=1, max_bullets=3)
-        project_scores.append((proj, proj_score, selected))
+        project_scores.append((proj, proj_score, proj_hits, selected))
 
     # Select top N by score, then restore original JSON order
-    top_projects = sorted(range(len(project_scores)), key=lambda i: project_scores[i][1], reverse=True)[:max_projects]
+    top_projects = sorted(
+        range(len(project_scores)), key=lambda i: project_scores[i][1], reverse=True
+    )[:max_projects]
     top_idx = set(top_projects)
-    projects = [{**p, "bullets": sb} for i, (p, _, sb) in enumerate(project_scores) if i in top_idx]
+    projects = [{**p, "bullets": sb} for i, (p, _, _h, sb) in enumerate(project_scores) if i in top_idx]
 
+    if verbose:
+        print(f"\n  PROJECTS  (top {max_projects} of {len(all_projects)} by score)")
+        for i, (proj, score, hits, _sb) in enumerate(project_scores):
+            marker = "+" if i in top_idx else "-"
+            ds = proj.get("default_score", 0)
+            ds_note = f"  default_score={ds}" if score == ds and ds > 0 else ""
+            print(f"    {marker} score={score:.1f}  {proj.get('name', '')}  [{_fmt_hits(hits)}]{ds_note}")
+            if i in top_idx:
+                # log bullets for selected projects
+                for b in _select_bullets(proj.get("bullets", []), freq, high_priority,
+                                         min_bullets=1, max_bullets=3, verbose=False):
+                    _, b_hits = _score_bullet(b, freq, high_priority)
+                    text = (b.get("text", "") or "")[:80].replace("\n", " ")
+                    print(f"        + [{_fmt_hits(b_hits)}]  \"{text}\"")
+
+    # ── Skills ────────────────────────────────────────────────────────────────
+    if verbose:
+        print(f"\n  SKILLS")
+    skills = _select_skills(master.get("skills", {}), freq, high_priority, verbose=verbose)
+
+    # ── Education ─────────────────────────────────────────────────────────────
+    if verbose:
+        print(f"\n  EDUCATION")
+    education = []
+    for edu in master.get("education", []):
+        cw_obj = edu.get("coursework")
+        if cw_obj:
+            matched = [t for t in cw_obj.get("tags", []) if t.lower() in freq]
+            if matched:
+                coursework = cw_obj["text"]
+                if verbose:
+                    print(f"    + {edu.get('institution', '')}  coursework included  (tags: {', '.join(matched)})")
+            else:
+                coursework = None
+                if verbose:
+                    print(f"    - {edu.get('institution', '')}  coursework excluded  (no tag matches; tags: {', '.join(cw_obj.get('tags', []))})")
+        else:
+            coursework = None
+            if verbose:
+                print(f"    - {edu.get('institution', '')}  no coursework defined")
+        education.append({**edu, "coursework": coursework})
+
+    # ── Summary ───────────────────────────────────────────────────────────────
     # Derive top tags for summary (rank by freq of all bullet tags across experience)
     tag_freq: dict[str, float] = {}
     for exp in master.get("experience", []):
@@ -317,14 +422,24 @@ def select_resume(master: dict, freq: dict[str, int], high_priority: set[str], j
 
     summary_raw = master.get("summary")
     if isinstance(summary_raw, dict):
+        if verbose:
+            print(f"\n  SUMMARY  (structured - scoring variants)")
         summary = _build_summary_from_structured(
             summary_raw, freq, high_priority,
             job_info=job_info, years_exp=master.get("years_experience", 4),
+            verbose=verbose,
         )
     elif isinstance(summary_raw, str):
+        if verbose:
+            print(f"\n  SUMMARY  (static string - used as-is)")
         summary = summary_raw
     else:
+        if verbose:
+            print(f"\n  SUMMARY  (auto-generated from top tags: {', '.join(top_tags[:5])})")
         summary = _build_summary(top_tags, job_info, master.get("years_experience", 4))
+
+    if verbose:
+        print("\n" + "-" * 72 + "\n")
 
     return {
         "name":       master["name"],
@@ -335,21 +450,10 @@ def select_resume(master: dict, freq: dict[str, int], high_priority: set[str], j
         "portfolio":  master.get("portfolio", ""),
         "location":   master.get("location", ""),
         "summary":    summary,
-        "education":  [
-            {
-                **edu,
-                "coursework": (
-                    edu["coursework"]["text"]
-                    if edu.get("coursework")
-                    and any(t.lower() in freq for t in edu["coursework"].get("tags", []))
-                    else None
-                ),
-            }
-            for edu in master.get("education", [])
-        ],
-        "experience":   experience,
-        "projects":     projects,
-        "skills":       _select_skills(master.get("skills", {}), freq, high_priority),
+        "education":  education,
+        "experience": experience,
+        "projects":   projects,
+        "skills":     skills,
         "achievements": [],   # filled greedily in build_resume after 1-page fit
     }
 
@@ -373,7 +477,7 @@ def compile_pdf(tex_content: str, output_path: Path) -> int:
     )
     if not pdflatex_cmd:
         raise RuntimeError(
-            "pdflatex not found — install TeX Live: "
+            "pdflatex not found - install TeX Live: "
             "sudo apt-get install texlive-latex-base texlive-latex-recommended "
             "texlive-latex-extra texlive-fonts-recommended"
         )
@@ -426,7 +530,7 @@ def _drop_lowest_item(
     The lowest-scoring candidate across both pools is dropped.
     Returns True if something was dropped, False if nothing is left to drop.
     """
-    # (score, drop_fn) — collect all candidates into one pool
+    # (score, drop_fn) - collect all candidates into one pool
     candidates: list[tuple[float, object]] = []
 
     # Experience bullets
@@ -438,32 +542,30 @@ def _drop_lowest_item(
         for bi, bullet in enumerate(bullets):
             if bullet.get("mandatory"):
                 continue
-            score = _score_bullet(bullet, freq, high_priority)
+            score, _ = _score_bullet(bullet, freq, high_priority)
+            label = f"bullet \"{(bullet.get('text') or '')[:60]}\" ({exp.get('company', '')})"
             # Capture ei/bi by value via default args
             def _drop_bullet(t=tailored, e=ei, b=bi):
                 t["experience"][e]["bullets"].pop(b)
-            candidates.append((score, _drop_bullet))
+            candidates.append((score, label, _drop_bullet))
 
     # Projects
     for pi, proj in enumerate(tailored.get("projects", [])):
         if proj.get("mandatory"):
             continue
-        proj_score = max(
-            proj.get("default_score", 0),
-            sum(
-                freq.get(t.lower(), 0) + (2 if t.lower() in high_priority else 0)
-                for t in proj.get("tags", [])
-            ),
-        )
+        proj_tag_score, _ = _score_tags(proj.get("tags", []), freq, high_priority)
+        proj_score = max(proj.get("default_score", 0), proj_tag_score)
+        label = f"project \"{proj.get('name', '')}\""
         def _drop_project(t=tailored, p=pi):
             t["projects"].pop(p)
-        candidates.append((proj_score, _drop_project))
+        candidates.append((proj_score, label, _drop_project))
 
     if not candidates:
         return False
 
     candidates.sort(key=lambda x: x[0])
-    _, drop_fn = candidates[0]
+    score, label, drop_fn = candidates[0]
+    print(f"    [trim] dropping {label}  (score={score:.1f})")
     drop_fn()
     return True
 
@@ -482,17 +584,17 @@ def build_resume(jd_text: str, job_info: dict) -> Path:
         local_pdf_path
 
     Raises:
-        FileNotFoundError  — master_resume.json missing
-        RuntimeError       — pdflatex missing or compile failure
+        FileNotFoundError  - master_resume.json missing
+        RuntimeError       - pdflatex missing or compile failure
     """
     if not MASTER_RESUME_PATH.exists():
         raise FileNotFoundError(
-            "master_resume.json not found — create it from the template in the repo root."
+            "master_resume.json not found - create it from the template in the repo root."
         )
 
     master = json.loads(MASTER_RESUME_PATH.read_text(encoding="utf-8"))
     freq, high_priority = extract_jd_keywords(jd_text)
-    tailored = select_resume(master, freq, high_priority, job_info)
+    tailored = select_resume(master, freq, high_priority, job_info, verbose=True)
 
     # Build a filesystem-safe filename
     safe = lambda s: re.sub(r"[^\w]", "_", s or "")
@@ -513,7 +615,7 @@ def build_resume(jd_text: str, job_info: dict) -> Path:
                 print(f"    Trimmed to 1 page after {iteration} drop(s).")
             break
         if not _drop_lowest_item(tailored, freq, high_priority):
-            print(f"    [WARN] Cannot trim further — {pages} page(s), nothing left to drop.")
+            print(f"    [WARN] Cannot trim further - {pages} page(s), nothing left to drop.")
             break
     else:
         print(f"    [WARN] Still {pages} page(s) after {MAX_TRIM_ITERS} trim iterations.")

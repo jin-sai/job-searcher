@@ -48,9 +48,13 @@ SHEET_HEADERS = [
 
 
 def normalize_url(url: str) -> str:
-    """Strip query parameters from a URL to get the canonical job URL."""
+    """Strip query parameters and normalize known ATS domain migrations."""
     parsed = urllib.parse.urlparse(url)
-    return urllib.parse.urlunparse(parsed._replace(query="", fragment=""))
+    netloc = parsed.netloc
+    # Greenhouse migrated from boards.greenhouse.io → job-boards.greenhouse.io
+    if netloc == "boards.greenhouse.io":
+        netloc = "job-boards.greenhouse.io"
+    return urllib.parse.urlunparse(parsed._replace(netloc=netloc, query="", fragment=""))
 
 
 def get_sheet():

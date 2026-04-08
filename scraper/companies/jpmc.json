@@ -17,18 +17,19 @@
     "full stack",
     "software engineer",
     "software developer",
+    "java developer",
+    "java engineer",
     "sde",
     "swe",
     "platform engineer",
     "infrastructure engineer",
     "site reliability",
-    "sre",
-    "lead software engineer",
-    "principal engineer"
+    "sre"
   ],
   "exclude_keywords": [
     "mainframe",
-    "databricks"
+    "databricks",
+    "quantitative"
   ],
   "location_keywords": [
     "bangalore",
