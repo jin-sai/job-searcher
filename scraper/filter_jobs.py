@@ -246,8 +246,8 @@ def run_filter():
                 final_domain = urllib.parse.urlparse(page.url).netloc
                 if orig_domain and final_domain and orig_domain != final_domain:
                     note = f"Scraper: URL redirected to {final_domain} — job may be expired or behind login"
-                    print(f"    [WARN] Redirected {orig_domain} → {final_domain} — marking Need Verification")
-                    pending_updates.append({"range": f"{STATUS_COL}{row_idx}", "values": [["Need Verification"]]})
+                    print(f"    [WARN] Redirected {orig_domain} → {final_domain} — marking Verify")
+                    pending_updates.append({"range": f"{STATUS_COL}{row_idx}", "values": [["Verify"]]})
                     pending_updates.append({"range": f"{NOTES_COL}{row_idx}", "values": [[note]]})
                     filtered_out += 1
                     time.sleep(1)
@@ -268,10 +268,10 @@ def run_filter():
 
             if fail_reason:
                 if short_text_note:
-                    # Page likely didn't load — don't trust the filter result; send to Need Verification
-                    pending_updates.append({"range": f"{STATUS_COL}{row_idx}", "values": [["Need Verification"]]})
+                    # Page likely didn't load — don't trust the filter result; send to Verify
+                    pending_updates.append({"range": f"{STATUS_COL}{row_idx}", "values": [["Verify"]]})
                     pending_updates.append({"range": f"{NOTES_COL}{row_idx}", "values": [[f"{short_text_note}Filter result unreliable: {fail_reason}"]]})
-                    print(f"    ? Need Verification (short page text, filter result unreliable: {fail_reason})")
+                    print(f"    ? Verify (short page text, filter result unreliable: {fail_reason})")
                 else:
                     pending_updates.append({"range": f"{STATUS_COL}{row_idx}", "values": [["Filtered Out"]]})
                     pending_updates.append({"range": f"{NOTES_COL}{row_idx}", "values": [[f"Auto-filtered: {fail_reason}"]]})
@@ -281,9 +281,9 @@ def run_filter():
                 if priority:
                     pending_updates.append({"range": f"{PRIORITY_COL}{row_idx}", "values": [[priority]]})
                 if short_text_note:
-                    pending_updates.append({"range": f"{STATUS_COL}{row_idx}", "values": [["Need Verification"]]})
+                    pending_updates.append({"range": f"{STATUS_COL}{row_idx}", "values": [["Verify"]]})
                     pending_updates.append({"range": f"{NOTES_COL}{row_idx}", "values": [[short_text_note.strip()]]})
-                    print(f"    ? Need Verification (short page text) | Priority: {priority}")
+                    print(f"    ? Verify (short page text) | Priority: {priority}")
                 else:
                     print(f"    + Passed | Priority: {priority}")
                 passed += 1

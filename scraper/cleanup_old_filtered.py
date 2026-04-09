@@ -14,7 +14,7 @@ from google.oauth2.service_account import Credentials
 
 SHEET_NAME       = "Job Search Tracker"
 CREDENTIALS_FILE = Path(__file__).parent.parent / "credentials.json"
-CUTOFF_DAYS      = 7
+CUTOFF_DAYS      = 15
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",

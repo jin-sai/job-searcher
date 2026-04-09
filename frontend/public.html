@@ -305,6 +305,9 @@
   <button class="tab" onclick="switchTab('verify')">
     Need Verification <span class="count" id="count-verify">0</span>
   </button>
+  <button class="tab" onclick="switchTab('applied')">
+    Applied
+  </button>
   <button class="tab" onclick="switchTab('filtered')">
     Filtered Out <span class="count" id="count-filtered">0</span>
   </button>
@@ -411,6 +414,7 @@
       if (activeTab === "to-apply"  && j.Status !== "New")                 return false;
       if (activeTab === "referral"  && j.Status !== "Referral Requested")  return false;
       if (activeTab === "verify"    && j.Status !== "Verify")              return false;
+      if (activeTab === "applied"   && j.Status !== "Applied")             return false;
       if (activeTab === "filtered"  && j.Status !== "Filtered Out")        return false;
       if (company && j.Company !== company)                                 return false;
       if (search && !`${j.Title} ${j.Company}`.toLowerCase().includes(search)) return false;
@@ -510,6 +514,8 @@
          ${lockedBtn("Applied")}
          ${lockedBtn("Re-queue")}
          ${lockedBtn("Dismiss")}`
+      : activeTab === "applied"
+      ? lockedBtn("Open")
       : `<a href="${esc(job.URL)}" target="_blank" class="btn btn-primary">Open</a>
          ${lockedBtn("Applied")}`;
 
@@ -566,7 +572,7 @@
     activeTab   = tab;
     currentPage = 1;
     document.querySelectorAll(".tab").forEach((t, i) => {
-      t.classList.toggle("active", ["to-apply","referral","verify","filtered"][i] === tab);
+      t.classList.toggle("active", ["to-apply","referral","verify","applied","filtered"][i] === tab);
     });
     renderList();
   }
