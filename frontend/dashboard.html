@@ -350,6 +350,9 @@
   <button class="tab tab-verify" onclick="switchTab('verify')">
     Need Verification <span class="count" id="count-verify">0</span>
   </button>
+  <button class="tab" onclick="switchTab('rejected')">
+    Rejected <span class="count" id="count-rejected">0</span>
+  </button>
   <button class="tab" onclick="switchTab('filtered')">
     Filtered Out <span class="count" id="count-filtered">0</span>
   </button>
@@ -364,6 +367,7 @@
     <div class="stat-card"><div class="label">Ask Referral</div><div class="value" id="stat-referral">—</div></div>
     <div class="stat-card"><div class="label">Applied</div><div class="value" id="stat-applied">—</div></div>
     <div class="stat-card" style="border-color:#fde68a"><div class="label">Need Verification</div><div class="value" id="stat-verify" style="color:#d97706">—</div></div>
+    <div class="stat-card"><div class="label">Rejected</div><div class="value" id="stat-rejected" style="color:#dc2626">—</div></div>
     <div class="stat-card"><div class="label">Filtered Out</div><div class="value" id="stat-filtered">—</div></div>
   </div>
 
@@ -457,6 +461,7 @@
       if (activeTab === "referral"  && j.Status !== "Referral Requested")     return false;
       if (activeTab === "applied"   && j.Status !== "Applied")                return false;
       if (activeTab === "verify"    && j.Status !== "Verify")                 return false;
+      if (activeTab === "rejected"   && j.Status !== "Rejected")               return false;
       if (activeTab === "filtered"  && j.Status !== "Filtered Out")           return false;
       if (company && j.Company !== company)                                   return false;
       if (search && !`${j.Title} ${j.Company}`.toLowerCase().includes(search)) return false;
@@ -567,6 +572,11 @@
       : activeTab === "filtered"
       ? `<a href="${job.URL}" target="_blank" class="btn btn-outline">Open</a>
          <button class="btn btn-success" onclick="openApplyModal('${job._id}', '${esc(job.Title)}', '${esc(job.Company)}')">Applied</button>`
+      : activeTab === "applied"
+      ? `<a href="${job.URL}" target="_blank" class="btn btn-outline">Open</a>
+         <button class="btn btn-danger" onclick="markRejected('${job._id}')">Rejected</button>`
+      : activeTab === "rejected"
+      ? `<a href="${job.URL}" target="_blank" class="btn btn-outline">Open</a>`
       : `<a href="${job.URL}" target="_blank" class="btn btn-outline">Open</a>`;
 
     const verifyNote = isVerify && job.Notes
@@ -618,7 +628,7 @@
     activeTab   = tab;
     currentPage = 1;
     document.querySelectorAll(".tab").forEach((t, i) => {
-      t.classList.toggle("active", ["to-apply","referral","applied","verify","filtered"][i] === tab);
+      t.classList.toggle("active", ["to-apply","referral","applied","verify","rejected","filtered"][i] === tab);
     });
     document.getElementById("dismiss-all-btn").style.display = tab === "to-apply" ? "" : "none";
     renderList();
@@ -640,6 +650,7 @@
     document.getElementById("count-referral").textContent = allJobs.filter(j => j.Status === "Referral Requested").length;
     document.getElementById("count-applied").textContent  = allJobs.filter(j => j.Status === "Applied").length;
     document.getElementById("count-verify").textContent   = allJobs.filter(j => j.Status === "Verify").length;
+    document.getElementById("count-rejected").textContent = allJobs.filter(j => j.Status === "Rejected").length;
     document.getElementById("count-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
   }
 
@@ -649,6 +660,7 @@
     document.getElementById("stat-referral").textContent = allJobs.filter(j => j.Status === "Referral Requested").length;
     document.getElementById("stat-applied").textContent  = allJobs.filter(j => j.Status === "Applied").length;
     document.getElementById("stat-verify").textContent   = allJobs.filter(j => j.Status === "Verify").length;
+    document.getElementById("stat-rejected").textContent = allJobs.filter(j => j.Status === "Rejected").length;
     document.getElementById("stat-filtered").textContent = allJobs.filter(j => j.Status === "Filtered Out").length;
   }
 
@@ -744,6 +756,24 @@
       updateStats();
       renderList();
       showToast("Re-queued for filtering");
+    } else {
+      showToast("Failed to update");
+    }
+  }
+
+  async function markRejected(jobId) {
+    const res = await fetch(`${API_BASE}/jobs/${jobId}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "Rejected" }),
+    });
+    if (res.ok) {
+      const job = allJobs.find(j => String(j._id) === String(jobId));
+      if (job) job.Status = "Rejected";
+      updateCounts();
+      updateStats();
+      renderList();
+      showToast("Marked as Rejected");
     } else {
       showToast("Failed to update");
     }

@@ -24,7 +24,9 @@
     "staff engineer",
     "engineer"
   ],
-  "exclude_keywords": [],
+  "exclude_keywords": [
+    "Benchmark Engineer"
+  ],
   "location_keywords": [
     "bangalore",
     "bengaluru",

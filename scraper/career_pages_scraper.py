@@ -362,12 +362,13 @@ def scrape_company_post_api(company: dict, existing_urls: set, worksheet) -> tup
         headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
         headers.update(company.get("post_api_headers", {}))
 
-        body = json.dumps(company.get("post_api_body", {})).encode()
-        req  = urllib.request.Request(
+        method = company.get("post_api_method", "POST").upper()
+        body   = json.dumps(company.get("post_api_body", {})).encode() if method != "GET" else None
+        req    = urllib.request.Request(
             company["post_api_url"],
             data=body,
             headers=headers,
-            method="POST",
+            method=method,
         )
         with urllib.request.urlopen(req, timeout=20) as r:
             data = json.loads(r.read())

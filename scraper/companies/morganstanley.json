@@ -1,0 +1,33 @@
+{
+  "name": "Morgan Stanley",
+  "post_api_url": "https://morganstanley.eightfold.ai/api/pcsx/search?domain=morganstanley.com&query=&location=&start=0&num=100&sort_by=timestamp&filter_city=Bengaluru",
+  "post_api_method": "GET",
+  "post_api_jobs_key": ["data", "positions"],
+  "post_api_title_key": "name",
+  "post_api_location_key": "locations",
+  "post_api_id_key": "id",
+  "job_url_prefix": "https://morganstanley.eightfold.ai/careers/job/",
+  "role_keywords": [
+    "software engineer",
+    "software developer",
+    "backend",
+    "back-end",
+    "back end",
+    "fullstack",
+    "full-stack",
+    "full stack",
+    "sde",
+    "swe",
+    "platform engineer",
+    "infrastructure engineer",
+    "site reliability",
+    "sre"
+  ],
+  "exclude_keywords": [],
+  "location_keywords": [
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "remote"
+  ]
+}
