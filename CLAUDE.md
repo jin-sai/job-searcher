@@ -44,7 +44,7 @@ Reads all `Status = "New"` rows with no Priority set, visits each job URL via Pl
 - Experience cap (`max_experience_years`)
 - Weighted skill keyword scoring → sets `Priority` column to the numeric score; sets `Status = "Filtered Out"` on failure
 
-After a job passes, optionally builds a tailored PDF resume via `scraper/resume_builder.py` and saves it to `output/resumes/<Company>_<Role>_<Date>.pdf`.
+After a job passes, optionally builds a tailored PDF resume via `scraper/resume_builder.py` and saves it to `output/resumes/SaiKumar_Resume_<N>.pdf`. Content is deduplicated by SHA-256 hash of the rendered `.tex` source — if an identical resume was built before, the existing file is reused. The manifest lives at `output/resumes/manifest.json`.
 
 ### API (`api/api.py`)
 FastAPI app backed by the same Google Sheet. Key endpoints:

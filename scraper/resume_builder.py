@@ -7,7 +7,7 @@ Given a job's description text and basic info (title, company), this module:
   3. Selects the best bullets per experience entry and top 3 projects
   4. Renders a .tex file via Jinja2 (Jake's Resume template)
   5. Compiles to PDF with pdflatex
-  6. Saves to output/resumes/<Company>_<Role>_<Date>.pdf
+  6. Saves to output/resumes/SaiKumar_Resume_<N>.pdf (deduplicated by content hash)
 
 Called from filter_jobs.py after a job passes all filters.
 Fails gracefully - a resume build failure never crashes the filter run.
@@ -18,6 +18,7 @@ Prerequisites:
   - pip: jinja2
 """
 
+import hashlib
 import json
 import re
 import shutil
@@ -597,21 +598,20 @@ def build_resume(jd_text: str, job_info: dict) -> Path:
     freq, high_priority = extract_jd_keywords(jd_text)
     tailored = select_resume(master, freq, high_priority, job_info, verbose=True)
 
-    # Build a filesystem-safe filename
-    safe = lambda s: re.sub(r"[^\w]", "_", s or "")
-    company  = safe(job_info.get("company", "unknown"))[:30]
-    role     = safe(job_info.get("title", "role"))[:30]
-    date_str = (job_info.get("date_found") or "")[:10].replace("-", "")
-    job_id   = safe(job_info.get("job_id") or "") or datetime.now().strftime("%H%M%S")
-    filename = f"{company}_{role}_{date_str}_{job_id}.pdf"
-    pdf_path = OUTPUT_DIR / filename
+    # Load manifest (tex_hash → filename)
+    manifest_path = OUTPUT_DIR / "manifest.json"
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    manifest: dict = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
 
     # Trim-until-fit: drop lowest-scoring non-mandatory bullets until 1 page
+    # We need the final tex content before we can hash it, so use a temp path first.
     MAX_TRIM_ITERS = 20
     pages = 1
+    tmp_path = OUTPUT_DIR / "_tmp_resume.pdf"
+    tex_content = render_tex(tailored)
     for iteration in range(MAX_TRIM_ITERS):
         tex_content = render_tex(tailored)
-        pages = compile_pdf(tex_content, pdf_path)
+        pages = compile_pdf(tex_content, tmp_path)
         if pages <= 1:
             if iteration > 0:
                 print(f"    Trimmed to 1 page after {iteration} drop(s).")
@@ -629,15 +629,40 @@ def build_resume(jd_text: str, job_info: dict) -> Path:
         for item in achievement_items:
             tailored["achievements"].append(item)
             tex_content = render_tex(tailored)
-            pages = compile_pdf(tex_content, pdf_path)
+            pages = compile_pdf(tex_content, tmp_path)
             if pages > 1:
                 tailored["achievements"].pop()
-                compile_pdf(last_good_tex, pdf_path)  # restore last good
+                tex_content = last_good_tex
+                compile_pdf(last_good_tex, tmp_path)  # restore last good
                 break
             last_good_tex = tex_content
         added = len(tailored["achievements"])
         if added:
             print(f"    Added {added}/{len(achievement_items)} achievement(s).")
+
+    # Deduplication: hash the final tex source
+    tex_hash = hashlib.sha256(tex_content.encode()).hexdigest()
+
+    if tex_hash in manifest:
+        existing = OUTPUT_DIR / manifest[tex_hash]
+        if existing.exists():
+            print(f"    Identical content already exists, reusing: {existing.name}")
+            if tmp_path.exists():
+                tmp_path.unlink()
+            return existing
+
+    # Assign next sequential ID and move the compiled PDF into place
+    next_id = len(manifest) + 1
+    filename = f"SaiKumar_Resume_{next_id}.pdf"
+    pdf_path = OUTPUT_DIR / filename
+    if tmp_path.exists():
+        shutil.move(str(tmp_path), str(pdf_path))
+    else:
+        compile_pdf(tex_content, pdf_path)
+
+    manifest[tex_hash] = filename
+    manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    print(f"    New resume: {filename}")
 
     return pdf_path
 
