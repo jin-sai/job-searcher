@@ -276,7 +276,7 @@ def scrape_company_graphql(company: dict, existing_urls: set, worksheet) -> tupl
         jobs = intercepted.get("jobs", [])
         if not jobs:
             print(f"  [WARN] No jobs intercepted from GraphQL response.")
-            return 0
+            return 0, 0
 
         location_key = company.get("graphql_location_key", "locations")
         url_key      = company.get("graphql_url_key")   # field containing relative/absolute URL
@@ -881,47 +881,67 @@ def run_career_page_scraper():
 
     # RippleHire-based companies (XML POST + pagination)
     for company in ripplehire_companies:
-        found, count = scrape_company_ripplehire(company, existing_urls, worksheet)
-        if found == 0:
-            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
-        results.append((company["name"], "RippleHire", found, count))
-        total_added += count
+        try:
+            found, count = scrape_company_ripplehire(company, existing_urls, worksheet)
+            if found == 0:
+                print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+            results.append((company["name"], "RippleHire", found, count))
+            total_added += count
+        except Exception as e:
+            print(f"  [ERROR] {company['name']} (RippleHire): {e}")
+            results.append((company["name"], "RippleHire", -1, 0))
         time.sleep(1)
 
     # Zwayam-based companies (multipart POST + pagination)
     for company in zwayam_companies:
-        found, count = scrape_company_zwayam(company, existing_urls, worksheet)
-        if found == 0:
-            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
-        results.append((company["name"], "Zwayam", found, count))
-        total_added += count
+        try:
+            found, count = scrape_company_zwayam(company, existing_urls, worksheet)
+            if found == 0:
+                print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+            results.append((company["name"], "Zwayam", found, count))
+            total_added += count
+        except Exception as e:
+            print(f"  [ERROR] {company['name']} (Zwayam): {e}")
+            results.append((company["name"], "Zwayam", -1, 0))
         time.sleep(1)
 
     # POST API-based companies (no browser needed)
     for company in post_api_companies:
-        found, count = scrape_company_post_api(company, existing_urls, worksheet)
-        if found == 0:
-            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
-        results.append((company["name"], "POST API", found, count))
-        total_added += count
+        try:
+            found, count = scrape_company_post_api(company, existing_urls, worksheet)
+            if found == 0:
+                print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+            results.append((company["name"], "POST API", found, count))
+            total_added += count
+        except Exception as e:
+            print(f"  [ERROR] {company['name']} (POST API): {e}")
+            results.append((company["name"], "POST API", -1, 0))
         time.sleep(1)
 
     # API-based companies (no browser needed)
     for company in api_companies:
-        found, count = scrape_company_api(company, existing_urls, worksheet)
-        if found == 0:
-            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
-        results.append((company["name"], "API", found, count))
-        total_added += count
+        try:
+            found, count = scrape_company_api(company, existing_urls, worksheet)
+            if found == 0:
+                print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+            results.append((company["name"], "API", found, count))
+            total_added += count
+        except Exception as e:
+            print(f"  [ERROR] {company['name']} (API): {e}")
+            results.append((company["name"], "API", -1, 0))
         time.sleep(1)
 
     # GraphQL-based companies (Playwright + response interception)
     for company in graphql_companies:
-        found, count = scrape_company_graphql(company, existing_urls, worksheet)
-        if found == 0:
-            print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
-        results.append((company["name"], "GraphQL", found, count))
-        total_added += count
+        try:
+            found, count = scrape_company_graphql(company, existing_urls, worksheet)
+            if found == 0:
+                print(f"  [WARN] {company['name']}: 0 jobs found — API/structure may have changed")
+            results.append((company["name"], "GraphQL", found, count))
+            total_added += count
+        except Exception as e:
+            print(f"  [ERROR] {company['name']} (GraphQL): {e}")
+            results.append((company["name"], "GraphQL", -1, 0))
         time.sleep(2)
 
     # Browser-based companies — group by user_agent so each UA gets its own context.
@@ -953,11 +973,23 @@ def run_career_page_scraper():
                 detail_page = context.new_page()
 
                 for company in group:
-                    found, count = scrape_company(page, detail_page, company, existing_urls, worksheet)
-                    if found == 0:
-                        print(f"  [WARN] {company['name']}: 0 jobs found — selector/page may have changed")
-                    results.append((company["name"], "Browser", found, count))
-                    total_added += count
+                    try:
+                        found, count = scrape_company(page, detail_page, company, existing_urls, worksheet)
+                        if found == 0:
+                            print(f"  [WARN] {company['name']}: 0 jobs found — selector/page may have changed")
+                        results.append((company["name"], "Browser", found, count))
+                        total_added += count
+                    except Exception as e:
+                        print(f"  [ERROR] {company['name']} (Browser): {e}")
+                        results.append((company["name"], "Browser", -1, 0))
+                        # Recreate pages so subsequent companies start fresh
+                        try:
+                            page.close()
+                            detail_page.close()
+                        except Exception:
+                            pass
+                        page        = context.new_page()
+                        detail_page = context.new_page()
                     time.sleep(2)
 
                 context.close()
@@ -968,10 +1000,16 @@ def run_career_page_scraper():
     print(f"{'Company':<28} {'Mode':<10} {'Found':>5}  {'Added':>5}  {'Status'}")
     print(f"{'─' * 62}")
     for name, mode, found, count in results:
-        status = "WARN: 0 jobs" if found == 0 else "OK"
-        print(f"{name:<28} {mode:<10} {found:>5}  {count:>5}  {status}")
+        if found == -1:
+            status = "ERROR"
+        elif found == 0:
+            status = "WARN: 0 jobs"
+        else:
+            status = "OK"
+        found_display = "ERR" if found == -1 else found
+        print(f"{name:<28} {mode:<10} {found_display!s:>5}  {count:>5}  {status}")
     print(f"{'─' * 62}")
-    total_found = sum(f for _, _, f, _ in results)
+    total_found = sum(f for _, _, f, _ in results if f >= 0)
     print(f"{'TOTAL':<28} {'':<10} {total_found:>5}  {total_added:>5}")
     print(f"{'─' * 62}")
 
