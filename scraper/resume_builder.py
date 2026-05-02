@@ -473,15 +473,10 @@ def compile_pdf(tex_content: str, output_path: Path) -> int:
     """Write tex_content to a temp dir, compile with pdflatex, copy PDF out.
     Returns the page count of the generated PDF.
     """
-    _MIKTEX_PATH = r"C:\Users\saiku\AppData\Local\Programs\MiKTeX\miktex\bin\x64\pdflatex.exe"
-    pdflatex_cmd = shutil.which("pdflatex") or (
-        _MIKTEX_PATH if Path(_MIKTEX_PATH).exists() else None
-    )
+    pdflatex_cmd = shutil.which("pdflatex")
     if not pdflatex_cmd:
         raise RuntimeError(
-            "pdflatex not found - install TeX Live: "
-            "sudo apt-get install texlive-latex-base texlive-latex-recommended "
-            "texlive-latex-extra texlive-fonts-recommended"
+            "pdflatex not found - install via: brew install --cask mactex-no-gui"
         )
 
     with tempfile.TemporaryDirectory() as tmpdir:
