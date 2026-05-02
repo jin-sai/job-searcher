@@ -19,8 +19,8 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Local scripts
-start_dashboard.bat
+# Local scripts (Windows-only)
+*.bat
 
 # Generated resume PDFs and build artifacts
 output/resumes/
